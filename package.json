@@ -1,0 +1,13 @@
+{
+  "name": "jinyong-wuxia-online",
+  "version": "1.0.0",
+  "description": "金庸武俠 Online - 網頁遊戲",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "npx http-server -p 8080",
+    "dev": "npx http-server -p 8080"
+  },
+  "dependencies": {
+    "phaser": "^3.70.0"
+  }
+}

@@ -1,0 +1,26 @@
+import Phaser from 'phaser';
+import BootScene from './scenes/BootScene.js';
+import MenuScene from './scenes/MenuScene.js';
+import CharacterSelectScene from './scenes/CharacterSelectScene.js';
+import WorldScene from './scenes/WorldScene.js';
+import BattleScene from './scenes/BattleScene.js';
+
+const config = {
+    type: Phaser.AUTO,
+    width: 1280,
+    height: 720,
+    parent: 'game-container',
+    backgroundColor: '#1a1a2e',
+    scene: [BootScene, MenuScene, CharacterSelectScene, WorldScene, BattleScene],
+    physics: {
+        default: 'arcade',
+        arcade: {
+            gravity: { y: 0 },
+            debug: false
+        }
+    }
+};
+
+const game = new Phaser.Game(config);
+
+export default game;
