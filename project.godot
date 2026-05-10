@@ -1,0 +1,50 @@
+; Engine configuration file.
+; It's best edited using the editor UI and not directly,
+; since the parameters that go here are not all obvious.
+;
+; Format:
+;   [section] ; section goes between []
+;   param=value ; assign values to parameters
+
+config_version=5
+
+[application]
+
+config/name="金庸武俠 Online"
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.3", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+DataManager="*res://scripts/autoload/data_manager.gd"
+SaveSystem="*res://scripts/autoload/save_system.gd"
+GameManager="*res://scripts/autoload/game_manager.gd"
+LifeSkillRecipes="*res://scripts/life_skill/recipes.gd"
+
+[display]
+
+window/size/viewport_width=1280
+window/size/viewport_height=720
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[input]
+
+move_up={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":4194320,"script":null}]}
+move_down={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":4194322,"script":null}]}
+move_left={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":4194321,"script":null}]}
+move_right={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":4194323,"script":null}]}
+attack={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":32,"script":null}]}
+defend={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":16777238,"script":null}]}
+skill_1={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":49,"script":null}]}
+skill_2={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":50,"script":null}]}
+skill_3={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":51,"script":null}]}
+skill_4={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":52,"script":null}]}
+interact={"deadzone":0.5,"events":[{"type":"InputEventKey","device":-1,"physical_keycode":69,"script":null}]}
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+textures/vram_compression/import_etc2_astc=true

@@ -1,0 +1,5 @@
+*.import
+export/
+*.tscn.backup
+*.gd1
+*.gd2
