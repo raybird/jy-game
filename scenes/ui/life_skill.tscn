@@ -1,0 +1,27 @@
+[gd_scene load_steps=2 format=3 uid="uid://life_skill_ui"]
+
+[ext_resource type="Script" path="res://scripts/life_skill/life_skill.gd" id="1"]
+
+[node name="LifeSkillPanel" type="PanelContainer"]
+offset_left = 100.0
+offset_top = 100.0
+offset_right = 500.0
+offset_bottom = 400.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "生活技能"
+horizontal_alignment = 1
+
+[node name="SkillList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CraftButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "制作"

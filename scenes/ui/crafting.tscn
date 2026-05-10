@@ -1,0 +1,31 @@
+[gd_scene load_steps=2 format=3 uid="uid://crafting_ui"]
+
+[ext_resource type="Script" path="res://scripts/life_skill/crafting.gd" id="1"]
+
+[node name="CraftingPanel" type="PanelContainer"]
+offset_left = 150.0
+offset_top = 150.0
+offset_right = 650.0
+offset_bottom = 450.0
+
+[node name="VBoxContainer" type="VBoxContainer" parent="."]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Title" type="Label" parent="VBoxContainer"]
+layout_mode = 2
+theme_override_font_sizes/font_size = 24
+text = "制作"
+horizontal_alignment = 1
+
+[node name="RecipeList" type="ItemList" parent="VBoxContainer"]
+layout_mode = 2
+size_flags_vertical = 3
+
+[node name="CraftButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "制作选中物品"
+
+[node name="CloseButton" type="Button" parent="VBoxContainer"]
+layout_mode = 2
+text = "关闭"

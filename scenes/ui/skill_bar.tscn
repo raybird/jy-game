@@ -1,0 +1,23 @@
+[gd_scene load_steps=2 format=3 uid="uid://skill_bar_ui"]
+
+[ext_resource type="Script" path="res://scripts/ui/skill_bar.gd" id="1"]
+
+[node name="SkillBar" type="HBoxContainer"]
+layout_mode = 2
+theme_override_constants/separation = 10
+
+[node name="Skill1" type="Button" parent="."]
+layout_mode = 2
+text = "1"
+
+[node name="Skill2" type="Button" parent="."]
+layout_mode = 2
+text = "2"
+
+[node name="Skill3" type="Button" parent="."]
+layout_mode = 2
+text = "3"
+
+[node name="Skill4" type="Button" parent="."]
+layout_mode = 2
+text = "4"
