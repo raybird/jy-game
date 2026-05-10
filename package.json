@@ -2,12 +2,16 @@
   "name": "jinyong-wuxia-online",
   "version": "1.0.0",
   "description": "金庸武俠 Online - 網頁遊戲",
-  "main": "src/main.js",
+  "type": "module",
   "scripts": {
-    "start": "npx http-server -p 8080",
-    "dev": "npx http-server -p 8080"
+    "dev": "vite",
+    "start": "vite",
+    "build": "vite build"
   },
   "dependencies": {
     "phaser": "^3.70.0"
+  },
+  "devDependencies": {
+    "vite": "^5.0.0"
   }
 }
