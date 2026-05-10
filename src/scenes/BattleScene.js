@@ -28,8 +28,6 @@ export default class BattleScene extends Phaser.Scene {
         this.playerMaxHp = dataManager.data.player.maxHp;
         this.playerMp = dataManager.data.player.mp;
         this.playerMaxMp = dataManager.data.player.maxMp;
-        this.playerAtb = 0;
-        this.playerCanAct = false;
 
         this.enemyHp = ENEMIES[this.enemyId].hp;
         this.enemyMaxHp = ENEMIES[this.enemyId].hp;
@@ -40,16 +38,17 @@ export default class BattleScene extends Phaser.Scene {
         this.add.text(300, 420, charData.name, {
             fontSize: '20px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
         }).setOrigin(0.5);
-        this.playerHpBar = this.add.rectangle(250, 440, 100, 15, 0xff0000);
-        this.playerHpBarBg = this.add.rectangle(250, 440, 100, 15, 0x333333).setOrigin(0, 0.5);
-        this.add.text(250, 460, 'HP', { fontSize: '12px', color: '#ffffff' }).setOrigin(0, 0.5);
+
+        this.add.rectangle(250, 440, 100, 15, 0x333333).setOrigin(0, 0.5);
+        this.playerHpBar = this.add.rectangle(250, 440, 100, 15, 0xff0000).setOrigin(0, 0.5);
+
+        this.add.rectangle(840, 390, 120, 15, 0x333333).setOrigin(0, 0.5);
+        this.enemyHpBar = this.add.rectangle(840, 390, 120, 15, 0xff0000).setOrigin(0, 0.5);
 
         this.add.rectangle(900, 300, 120, 120, 0xd94a4a);
         this.add.text(900, 370, ENEMIES[this.enemyId].name, {
             fontSize: '20px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
         }).setOrigin(0.5);
-        this.enemyHpBar = this.add.rectangle(840, 390, 120, 15, 0xff0000);
-        this.enemyHpBarBg = this.add.rectangle(840, 390, 120, 15, 0x333333).setOrigin(0, 0.5);
 
         this.battleLog = this.add.text(100, 500, '戰鬥日志:\n', {
             fontSize: '16px', color: '#aaaaaa', fontFamily: 'Microsoft JhengHei',
@@ -130,13 +129,12 @@ export default class BattleScene extends Phaser.Scene {
     }
 
     dealDamageToPlayer(damage) {
-        const defense = 0;
-        const actualDamage = Math.max(1, damage - defense);
+        const actualDamage = Math.max(1, damage);
         this.playerHp -= actualDamage;
         dataManager.data.player.hp = this.playerHp;
 
         const hpPercent = Math.max(0, (this.playerHp / this.playerMaxHp) * 100);
-        this.playerHpBar.width = hpPercent / 100 * 100;
+        this.playerHpBar.width = (hpPercent / 100) * 100;
         this.log(`你受到 ${actualDamage} 傷害！`);
 
         if (this.playerHp <= 0) {
@@ -162,16 +160,6 @@ export default class BattleScene extends Phaser.Scene {
 
     updateATB() {
         if (!this.battleActive) return;
-
-        const playerAgility = dataManager.data.player.agility || 10;
-        const enemySpeed = 8;
-
-        if (this.playerTurn) {
-            this.playerAtb = 100;
-        } else {
-            this.playerAtb = Math.min(100, this.playerAtb + playerAgility * 0.05);
-            this.enemyAtb = Math.min(100, this.enemyAtb + enemySpeed * 0.05);
-        }
     }
 
     endBattle(victory) {
@@ -200,6 +188,8 @@ export default class BattleScene extends Phaser.Scene {
 
         this.time.delayedCall(2000, () => {
             dataManager.data.inBattle = false;
+            dataManager.data.player.hp = dataManager.data.player.maxHp;
+            dataManager.data.player.mp = dataManager.data.player.maxMp;
             this.scene.start('WorldScene', { map: dataManager.data.currentMap });
         });
     }

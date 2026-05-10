@@ -6,6 +6,7 @@ import { saveSystem } from '../systems/SaveSystem.js';
 export default class CharacterSelectScene extends Phaser.Scene {
     constructor() {
         super({ key: 'CharacterSelectScene' });
+        this.inputText = '';
     }
 
     create() {
@@ -38,17 +39,18 @@ export default class CharacterSelectScene extends Phaser.Scene {
             charButtons.push({ btn, id });
         });
 
-        this.add.text(640, 500, '名字（可選）：', {
+        this.add.text(640, 480, '名字（可選）：', {
             fontSize: '24px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
         }).setOrigin(0.5);
 
-        const nameInput = this.add.textInput
-            ? this.add.textInput(640, 540, { width: 200 })
-            : this.add.text(640, 540, '(請在輸入框輸入)', {
-                fontSize: '20px', color: '#888888', fontFamily: 'Microsoft JhengHei'
-            }).setOrigin(0.5);
+        const inputBg = this.add.rectangle(640, 520, 200, 40, 0x1a1a2e)
+            .setStrokeStyle(2, 0xc9a227);
 
-        const confirmBtn = this.add.text(cx, 620, '確認開始遊戲', {
+        this.nameText = this.add.text(640, 520, '', {
+            fontSize: '20px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
+        }).setOrigin(0.5);
+
+        const confirmBtn = this.add.text(cx, 600, '確認開始遊戲', {
             fontSize: '32px', color: '#c9a227', fontFamily: 'Microsoft JhengHei'
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
@@ -65,37 +67,20 @@ export default class CharacterSelectScene extends Phaser.Scene {
         confirmBtn.on('pointerover', () => confirmBtn.setColor('#ffffff'));
         confirmBtn.on('pointerout', () => confirmBtn.setColor('#c9a227'));
         confirmBtn.on('pointerdown', () => {
-            const name = nameInput.text || CHARACTERS[selectedCharId].name;
+            const name = this.inputText || CHARACTERS[selectedCharId].name;
             dataManager.data.player.name = name;
             dataManager.setCharacter(selectedCharId, CHARACTERS[selectedCharId]);
             saveSystem.save();
             this.scene.start('WorldScene', { map: 'xianyang' });
         });
+
+        this.input.keyboard.on('keydown', (event) => {
+            if (event.key === 'Backspace') {
+                this.inputText = this.inputText.slice(0, -1);
+            } else if (event.key.length === 1) {
+                this.inputText += event.key;
+            }
+            this.nameText.setText(this.inputText);
+        });
     }
 }
-
-this.add.textInput = function(x, y, options) {
-    const input = document.createElement('input');
-    input.type = 'text';
-    input.placeholder = '輸入名字';
-    input.style.position = 'absolute';
-    input.style.left = x + 'px';
-    input.style.top = y + 'px';
-    input.style.width = (options.width || 200) + 'px';
-    input.style.textAlign = 'center';
-    input.style.fontSize = '20px';
-    input.style.backgroundColor = '#2a2a4a';
-    input.style.color = '#ffffff';
-    input.style.border = '2px solid #c9a227';
-    input.style.borderRadius = '5px';
-    input.style.padding = '5px';
-    document.body.appendChild(input);
-    return {
-        text: '',
-        get text() { return input.value; },
-        set text(v) { input.value = v; },
-        setPosition: () => {},
-        setOrigin: () => {},
-        setDepth: () => {}
-    };
-};

@@ -1,8 +1,7 @@
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
 import { saveSystem } from '../systems/SaveSystem.js';
-import { CHARACTERS } from '../data/GameData.js';
-import { SKILL_NAMES } from '../data/GameData.js';
+import { CHARACTERS, SKILL_NAMES } from '../data/GameData.js';
 
 export default class WorldScene extends Phaser.Scene {
     constructor() {
@@ -23,10 +22,6 @@ export default class WorldScene extends Phaser.Scene {
         this.player.setCircle(16);
         this.player.setCollideWorldBounds(true);
         this.player.body.setSize(32, 32);
-        this.player.setData('hp', dataManager.data.player.hp);
-        this.player.setData('maxHp', dataManager.data.player.maxHp);
-        this.player.setData('mp', dataManager.data.player.mp);
-        this.player.setData('maxMp', dataManager.data.player.maxMp);
 
         this.setupHUD();
         this.setupNPCs();
@@ -40,8 +35,6 @@ export default class WorldScene extends Phaser.Scene {
             right: Phaser.Input.Keyboard.KeyCodes.D
         });
         this.eKey = this.input.keyboard.addKey(Phaser.Input.Keyboard.KeyCodes.E);
-
-        this.physics.add.collider(this.player, this.walls);
 
         this.updateHUD();
     }
@@ -65,29 +58,29 @@ export default class WorldScene extends Phaser.Scene {
             fontSize: '32px', color: '#c9a227', fontFamily: 'Microsoft JhengHei'
         });
 
-        this.walls = this.physics.add.staticGroup();
-
         if (this.currentMap !== 'xianyang') {
-            const grassAreas = this.add.rectangle(640, 400, 800, 300, 0x2d4a2d, 0.3);
+            this.grassArea = this.add.rectangle(640, 400, 800, 300, 0x2d4a2d, 0.3).setInteractive();
         }
     }
 
     setupHUD() {
-        this.hpBar = this.add.rectangle(170, 690, 150, 20, 0xff0000).setOrigin(0, 0.5);
-        this.hpBarBg = this.add.rectangle(170, 690, 150, 20, 0x333333).setOrigin(0, 0.5);
+        const p = dataManager.data.player;
+
+        this.add.rectangle(170, 690, 150, 20, 0x333333).setOrigin(0, 0.5);
+        this.hpBar = this.add.rectangle(170, 690, (p.hp / p.maxHp) * 150, 20, 0xff0000).setOrigin(0, 0.5);
         this.add.text(20, 690, 'HP', { fontSize: '16px', color: '#ffffff' });
 
-        this.mpBar = this.add.rectangle(170, 715, 150, 20, 0x0000ff).setOrigin(0, 0.5);
-        this.mpBarBg = this.add.rectangle(170, 715, 150, 20, 0x333333).setOrigin(0, 0.5);
+        this.add.rectangle(170, 715, 150, 20, 0x333333).setOrigin(0, 0.5);
+        this.mpBar = this.add.rectangle(170, 715, (p.mp / p.maxMp) * 150, 20, 0x0000ff).setOrigin(0, 0.5);
         this.add.text(20, 715, 'MP', { fontSize: '16px', color: '#ffffff' });
 
-        this.add.text(20, 640, '銀兩: ' + dataManager.data.player.silver, {
+        this.silverText = this.add.text(20, 640, '銀兩: ' + p.silver, {
             fontSize: '20px', color: '#c9a227', fontFamily: 'Microsoft JhengHei'
-        }).setName('silverText');
+        });
 
-        this.add.text(20, 665, '等級: ' + dataManager.data.player.level, {
+        this.levelText = this.add.text(20, 665, '等級: ' + p.level, {
             fontSize: '20px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
-        }).setName('levelText');
+        });
 
         const skillX = 900;
         this.add.text(skillX, 640, '招式 (1-4):', {
@@ -114,7 +107,7 @@ export default class WorldScene extends Phaser.Scene {
             { id: 'herbalist', x: 980, y: 300, name: '草藥商', color: 0x228b22 }
         ];
 
-        this.npcGroup = this.physics.add.staticGroup();
+        this.npcGroup = this.add.group();
 
         npcs.forEach(npc => {
             const npcSprite = this.add.rectangle(npc.x, npc.y, 50, 70, npc.color)
@@ -123,16 +116,14 @@ export default class WorldScene extends Phaser.Scene {
                 fontSize: '18px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
             }).setOrigin(0.5);
 
-            this.npcGroup.add(npcSprite);
             npcSprite.setData('npcId', npc.id);
+            this.npcGroup.add(npcSprite);
 
             npcSprite.on('pointerdown', () => this.interactWithNPC(npc.id));
         });
     }
 
     setupExits() {
-        this.exits = this.physics.add.staticGroup();
-
         const exitPositions = {
             xianyang: [
                 { target: 'zhongnan', x: 640, y: 700, w: 150, h: 30, label: '終南山' },
@@ -154,8 +145,6 @@ export default class WorldScene extends Phaser.Scene {
             this.add.text(exit.x, exit.y, exit.label, {
                 fontSize: '14px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
             }).setOrigin(0.5);
-            this.exits.add(exitZone);
-            exitZone.setData('target', exit.target);
             exitZone.on('pointerdown', () => {
                 dataManager.data.currentMap = exit.target;
                 saveSystem.save();
@@ -181,11 +170,11 @@ export default class WorldScene extends Phaser.Scene {
         const panel = this.add.rectangle(640, 360, 400, 300, 0x1a1a2e)
             .setStrokeStyle(2, 0xc9a227);
 
-        const title = this.add.text(640, 230, skillNames[skillId] + ' Lv.' + skill.level, {
+        this.add.text(640, 230, skillNames[skillId] + ' Lv.' + skill.level, {
             fontSize: '28px', color: '#c9a227', fontFamily: 'Microsoft JhengHei'
         }).setOrigin(0.5);
 
-        const info = this.add.text(640, 280, `經驗: ${skill.exp}/${expNeeded}`, {
+        this.add.text(640, 280, `經驗: ${skill.exp}/${expNeeded}`, {
             fontSize: '20px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
         }).setOrigin(0.5);
 
@@ -194,7 +183,8 @@ export default class WorldScene extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
         closeBtn.on('pointerdown', () => {
-            panel.destroy(); title.destroy(); info.destroy(); closeBtn.destroy();
+            panel.destroy();
+            closeBtn.destroy();
         });
     }
 
@@ -223,6 +213,7 @@ export default class WorldScene extends Phaser.Scene {
                     listings.splice(i, 1);
                     buyBtn.setText('已購買');
                     buyBtn.disableInteractive();
+                    this.showAuctionMenu();
                 }
             });
             y += 35;
@@ -239,9 +230,8 @@ export default class WorldScene extends Phaser.Scene {
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
         closeBtn.on('pointerdown', () => {
-            panel.destroy(); closeBtn.destroy();
-            this.scene.children.list.filter(c => c.text === '購買').forEach(b => b.destroy());
-            this.showAuctionMenu.bind(this);
+            panel.destroy();
+            closeBtn.destroy();
         });
     }
 
@@ -249,12 +239,8 @@ export default class WorldScene extends Phaser.Scene {
         const p = dataManager.data.player;
         this.hpBar.width = (p.hp / p.maxHp) * 150;
         this.mpBar.width = (p.mp / p.maxMp) * 150;
-
-        const silverText = this.children.list.find(c => c.name === 'silverText');
-        if (silverText) silverText.setText('銀兩: ' + p.silver);
-
-        const levelText = this.children.list.find(c => c.name === 'levelText');
-        if (levelText) levelText.setText('等級: ' + p.level);
+        this.silverText.setText('銀兩: ' + p.silver);
+        this.levelText.setText('等級: ' + p.level);
     }
 
     update() {
@@ -276,9 +262,9 @@ export default class WorldScene extends Phaser.Scene {
 
         this.player.setVelocity(vx * speed, vy * speed);
 
-        if (this.currentMap !== 'xianyang') {
-            const grassZone = this.children.list.find(c => c.fillColor === 0x2d4a2d);
-            if (grassZone && this.player.body.overlaps(grassZone)) {
+        if (this.currentMap !== 'xianyang' && this.grassArea) {
+            const bounds = this.grassArea.getBounds();
+            if (bounds.contains(this.player.x, this.player.y)) {
                 if (Math.random() < 0.005) {
                     this.startRandomBattle();
                 }
