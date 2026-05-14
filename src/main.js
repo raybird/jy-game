@@ -4,6 +4,8 @@ import MenuScene from './scenes/MenuScene.js';
 import CharacterSelectScene from './scenes/CharacterSelectScene.js';
 import WorldScene from './scenes/WorldScene.js';
 import BattleScene from './scenes/BattleScene.js';
+import SkillTreeScene from './scenes/SkillTreeScene.js';
+import { soundManager } from './systems/SoundManager.js';
 
 const config = {
     type: Phaser.AUTO,
@@ -11,7 +13,7 @@ const config = {
     height: 720,
     parent: 'game-container',
     backgroundColor: '#1a1a2e',
-    scene: [BootScene, MenuScene, CharacterSelectScene, WorldScene, BattleScene],
+    scene: [BootScene, MenuScene, CharacterSelectScene, WorldScene, BattleScene, SkillTreeScene],
     physics: {
         default: 'arcade',
         arcade: {
@@ -22,5 +24,9 @@ const config = {
 };
 
 const game = new Phaser.Game(config);
+
+document.addEventListener('click', () => {
+    soundManager.ensureContext();
+}, { once: true });
 
 export default game;

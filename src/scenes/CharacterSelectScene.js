@@ -1,5 +1,5 @@
 import Phaser from 'phaser';
-import { CHARACTERS } from '../data/GameData.js';
+import { CHARACTERS, CHARACTER_SKILLS, ATTRIBUTE_CONFIG } from '../data/GameData.js';
 import { dataManager } from '../systems/DataManager.js';
 import { saveSystem } from '../systems/SaveSystem.js';
 
@@ -35,6 +35,23 @@ export default class CharacterSelectScene extends Phaser.Scene {
                 fontSize: '16px', color: '#aaaaaa', fontFamily: 'Microsoft JhengHei',
                 align: 'center', wordWrap: { width: 160 }
             }).setOrigin(0.5);
+
+            const charAttr = ATTRIBUTE_CONFIG.characterAttribute[id];
+            if (charAttr) {
+                this.add.text(x, cy + 54, ATTRIBUTE_CONFIG.icons[charAttr] + ' ' + ATTRIBUTE_CONFIG.names[charAttr], {
+                    fontSize: '14px', color: '#ffcc00', fontFamily: 'Microsoft JhengHei',
+                    align: 'center'
+                }).setOrigin(0.5);
+            }
+
+            const skills = CHARACTER_SKILLS[id];
+            if (skills) {
+                const skillText = skills.map((s, idx) => (idx + 1) + '.' + s.name).join('  ');
+                this.add.text(x, cy + 70, skillText, {
+                    fontSize: '11px', color: '#88aacc', fontFamily: 'Microsoft JhengHei',
+                    align: 'center'
+                }).setOrigin(0.5);
+            }
 
             charButtons.push({ btn, id });
         });

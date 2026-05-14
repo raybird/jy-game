@@ -1,3 +1,6 @@
+import { SKILL_TREE_CONFIG, ITEMS, ACHIEVEMENTS } from '../data/GameData.js';
+import { soundManager } from './SoundManager.js';
+
 class DataManager {
     constructor() {
         this.data = {
@@ -18,8 +21,18 @@ class DataManager {
                 silver: 1000,
                 skills: [0, 0, 0, 0],
                 skillExp: [0, 0, 0, 0],
+                skillTree: [
+                    { nodes: [false, false, false] },
+                    { nodes: [false, false, false] },
+                    { nodes: [false, false, false] },
+                    { nodes: [false, false, false] }
+                ],
                 inventory: [],
-                equipped: { weapon: null, armor: null, accessory: null }
+                equipped: { weapon: null, armor: null, accessory: null },
+                achievements: {},
+                battleCount: 0,
+                killCount: 0,
+                titles: []
             },
             lifeSkills: {
                 herbalism: { level: 1, exp: 0 },
@@ -52,8 +65,18 @@ class DataManager {
             silver: 1000,
             skills: [0, 0, 0, 0],
             skillExp: [0, 0, 0, 0],
+            skillTree: [
+                { nodes: [false, false, false] },
+                { nodes: [false, false, false] },
+                { nodes: [false, false, false] },
+                { nodes: [false, false, false] }
+            ],
             inventory: [],
-            equipped: { weapon: null, armor: null, accessory: null }
+            equipped: { weapon: null, armor: null, accessory: null },
+            achievements: {},
+            battleCount: 0,
+            killCount: 0,
+            titles: []
         };
     }
 
@@ -114,8 +137,97 @@ class DataManager {
             p.exp -= expNeeded;
             p.level++;
             p.skillPoints += 3;
+            soundManager.play('levelup');
             console.log(p.name + ' 等級提升到 ' + p.level + '！');
         }
+    }
+
+    checkAchievements() {
+        const p = this.data.player;
+        for (const [id, ach] of Object.entries(ACHIEVEMENTS)) {
+            if (p.achievements[id]) continue;
+
+            let unlock = false;
+            if (id === 'first_battle' && p.battleCount >= 1) unlock = true;
+            if (id === 'veteran' && p.battleCount >= 10) unlock = true;
+            if (id === 'slayer' && p.killCount >= 100) unlock = true;
+            if (id === 'collector') {
+                const eq = p.equipped;
+                const count = [eq.weapon, eq.armor, eq.accessory].filter(Boolean).length;
+                if (count >= 3) unlock = true;
+            }
+            if (id === 'skill_master') {
+                unlock = p.skillTree.some(s => s.nodes.every(Boolean));
+            }
+
+            if (unlock) {
+                p.achievements[id] = true;
+                if (ach.reward.silver) p.silver += ach.reward.silver;
+                if (ach.reward.item) this.addItem(ach.reward.item, ach.reward.amount || 1);
+                if (ach.reward.title) p.titles.push(ach.reward.title);
+                console.log('🏆 解鎖成就：' + ach.name);
+            }
+        }
+    }
+
+    upgradeSkillNode(skillIndex, nodeIndex) {
+        const p = this.data.player;
+        const tree = p.skillTree;
+
+        if (!tree[skillIndex]) return false;
+        if (tree[skillIndex].nodes[nodeIndex]) return false;
+
+        const cost = SKILL_TREE_CONFIG.nodeCosts[nodeIndex];
+        if (p.skillPoints < cost) return false;
+
+        p.skillPoints -= cost;
+        tree[skillIndex].nodes[nodeIndex] = true;
+        return true;
+    }
+
+    canUpgradeNode(skillIndex, nodeIndex) {
+        const p = this.data.player;
+        const tree = p.skillTree;
+
+        if (!tree[skillIndex]) return false;
+        if (tree[skillIndex].nodes[nodeIndex]) return false;
+        return p.skillPoints >= SKILL_TREE_CONFIG.nodeCosts[nodeIndex];
+    }
+
+    getBattleStats() {
+        const equipped = this.data.player.equipped;
+        const stats = { attack: 0, defense: 0, critBonus: 0, dmgReduction: 0, hpRegenCombat: 0, rageBoost: 1.0 };
+
+        const slots = ['weapon', 'armor', 'accessory'];
+        for (const slot of slots) {
+            const itemId = equipped[slot];
+            if (itemId && ITEMS[itemId] && ITEMS[itemId].battleStats) {
+                const bs = ITEMS[itemId].battleStats;
+                if (bs.attack) stats.attack += bs.attack;
+                if (bs.defense) stats.defense += bs.defense;
+                if (bs.critBonus) stats.critBonus += bs.critBonus;
+                if (bs.dmgReduction) stats.dmgReduction = Math.min(0.5, stats.dmgReduction + bs.dmgReduction);
+                if (bs.hpRegenCombat) stats.hpRegenCombat = Math.max(stats.hpRegenCombat, bs.hpRegenCombat);
+                if (bs.rageBoost) stats.rageBoost = Math.max(stats.rageBoost, bs.rageBoost);
+            }
+        }
+        return stats;
+    }
+
+    equipItem(itemId) {
+        const item = ITEMS[itemId];
+        if (!item) return false;
+
+        const typeMap = { weapon: 'weapon', armor: 'armor', accessory: 'accessory' };
+        const slot = typeMap[item.type];
+        if (!slot) return false;
+
+        this.data.player.equipped[slot] = itemId;
+        return true;
+    }
+
+    unequipItem(slot) {
+        this.data.player.equipped[slot] = null;
     }
 
     getData() {

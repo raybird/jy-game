@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
 import { saveSystem } from '../systems/SaveSystem.js';
-import { CHARACTERS, SKILL_NAMES } from '../data/GameData.js';
+import { CHARACTERS, CHARACTER_SKILLS, ENCOUNTER_CONFIG, ITEMS } from '../data/GameData.js';
 
 export default class WorldScene extends Phaser.Scene {
     constructor() {
@@ -33,6 +33,11 @@ export default class WorldScene extends Phaser.Scene {
             right: Phaser.Input.Keyboard.KeyCodes.D
         });
 
+        this.encounterTimer = 0;
+        this.input.keyboard.on('keydown-V', () => {
+            this.scene.pause();
+            this.scene.launch('SkillTreeScene');
+        });
         this.updateHUD();
     }
 
@@ -212,21 +217,37 @@ export default class WorldScene extends Phaser.Scene {
             fontSize: '12px', color: '#aaaaaa', fontFamily: 'Arial'
         });
 
+        const eq = dataManager.data.player.equipped;
+        this.equipText = this.add.text(280, 720, '武:' + (ITEMS[eq.weapon] ? ITEMS[eq.weapon].name : '無')
+            + ' 防:' + (ITEMS[eq.armor] ? ITEMS[eq.armor].name : '無')
+            + ' 飾:' + (ITEMS[eq.accessory] ? ITEMS[eq.accessory].name : '無'), {
+            fontSize: '11px', color: '#888888', fontFamily: 'Microsoft JhengHei'
+        });
+
+        this.add.text(1200, 20, 'V: 武功', {
+            fontSize: '14px', color: '#888888', fontFamily: 'Microsoft JhengHei'
+        });
+
         const skillX = 900;
         this.add.text(skillX, 638, '【 招式 】', {
             fontSize: '18px', color: '#c9a227', fontFamily: 'Microsoft JhengHei'
         });
 
         this.skillLabels = [];
+        const charId = dataManager.data.player.characterId;
+        const skills = (CHARACTER_SKILLS && CHARACTER_SKILLS[charId]) || [];
         for (let i = 0; i < 4; i++) {
             const bg = this.add.rectangle(skillX + i * 85, 665, 75, 45, 0x1a1a4a)
                 .setStrokeStyle(2, 0x4169e1);
 
-            const label = this.add.text(skillX + i * 85, 660, `${SKILL_NAMES[i]}`, {
+            const skillName = skills[i] ? skills[i].name : `招式${i + 1}`;
+            const mpCost = skills[i] ? skills[i].cost : 10;
+
+            const label = this.add.text(skillX + i * 85, 660, skillName, {
                 fontSize: '13px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
             }).setOrigin(0.5);
 
-            const cost = this.add.text(skillX + i * 85, 678, `MP: ${10 + i * 5}`, {
+            const cost = this.add.text(skillX + i * 85, 678, `MP: ${mpCost}`, {
                 fontSize: '10px', color: '#888888', fontFamily: 'Arial'
             }).setOrigin(0.5);
 
@@ -455,7 +476,7 @@ export default class WorldScene extends Phaser.Scene {
         this.expText.setText('EXP: ' + p.exp);
     }
 
-    update() {
+    update(time, delta) {
         if (!this.player) return;
 
         const container = this.player.getData('container');
@@ -482,24 +503,37 @@ export default class WorldScene extends Phaser.Scene {
             else if (vx > 0) container.setScale(1, 1);
         }
 
+        
+
         if (this.currentMap !== 'xianyang' && this.grassArea) {
             const bounds = this.grassArea.getBounds();
             if (bounds.contains(this.player.x, this.player.y)) {
-                if (Math.random() < 0.003) {
-                    this.startRandomBattle();
+                const moving = vx !== 0 || vy !== 0;
+                if (moving) {
+                    this.encounterTimer += delta;
+                    if (this.encounterTimer >= ENCOUNTER_CONFIG.interval) {
+                        this.encounterTimer = 0;
+                        if (Math.random() < ENCOUNTER_CONFIG.baseChance) {
+                            this.startRandomBattle();
+                        }
+                    }
                 }
             }
+        }
+
+        const p = dataManager.data.player;
+        if (p.hp < p.maxHp) {
+            p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.01 * delta / 1000);
+        }
+        if (p.mp < p.maxMp) {
+            p.mp = Math.min(p.maxMp, p.mp + p.maxMp * 0.005 * delta / 1000);
         }
 
         this.updateHUD();
     }
 
     startRandomBattle() {
-        const maps = {
-            zhongnan: ['quanzhen_disciple', 'taoist'],
-            guangming: ['mingjiao_member', 'persian']
-        };
-        const enemies = maps[this.currentMap] || ['quanzhen_disciple'];
+        const enemies = ENCOUNTER_CONFIG.mapEnemies[this.currentMap] || ['quanzhen_disciple'];
         const enemyId = enemies[Math.floor(Math.random() * enemies.length)];
 
         dataManager.data.inBattle = true;

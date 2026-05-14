@@ -3,3 +3,5 @@ export/
 *.tscn.backup
 *.gd1
 *.gd2
+node_modules/
+dist/
