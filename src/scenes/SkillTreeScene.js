@@ -1,94 +1,155 @@
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
-import { CHARACTERS, CHARACTER_SKILLS, SKILL_TREE_CONFIG } from '../data/GameData.js';
+import { sectManager } from '../systems/SectManager.js';
 
 export default class SkillTreeScene extends Phaser.Scene {
     constructor() {
-        super({ key: 'SkillTreeScene' });
+        super('SkillTreeScene');
     }
 
     create() {
+        this.cameras.main.setBackgroundColor('#000000');
         const p = dataManager.data.player;
-        const charId = p.characterId;
-        const charData = CHARACTERS[charId];
-        const skills = CHARACTER_SKILLS[charId];
-        const tree = p.skillTree;
+        const cx = 400;
+        let iy = 30;
 
-        this.add.rectangle(640, 360, 1280, 720, 0x000000, 0.85);
-
-        this.add.text(640, 40, charData.name + ' · 武功強化', {
-            fontSize: '36px', color: '#ffd700', fontFamily: 'Microsoft JhengHei'
+        this.add.text(cx, iy, '武功管理', {
+            fontSize: '26px', fill: '#ffd700', fontFamily: 'serif'
         }).setOrigin(0.5);
+        iy += 35;
 
-        this.add.text(640, 80, '技能點：' + p.skillPoints, {
-            fontSize: '20px', color: '#00ff00', fontFamily: 'Microsoft JhengHei'
+        this.add.text(cx, iy, `學點：${p.studyPoints}  實戰：${p.combatExp}`, {
+            fontSize: '16px', fill: '#aaa', fontFamily: 'serif'
         }).setOrigin(0.5);
+        iy += 25;
 
-        const startY = 130;
-        const skillH = 130;
+        this.add.text(cx, iy, '--- 已學武功 ---', {
+            fontSize: '18px', fill: '#ffd700', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        iy += 28;
 
-        for (let si = 0; si < skills.length; si++) {
-            const skill = skills[si];
-            const y = startY + si * skillH;
+        if (p.martialArts.length === 0) {
+            this.add.text(cx, iy, '尚未學習任何武功', {
+                fontSize: '16px', fill: '#666', fontFamily: 'serif'
+            }).setOrigin(0.5);
+            iy += 30;
+        } else {
+            p.martialArts.forEach(entry => {
+                const artDef = sectManager.getArtDefinition(entry.id);
+                if (!artDef) return;
 
-            this.add.rectangle(640, y + 10, 900, 120, 0x1a1a2e, 0.8)
-                .setStrokeStyle(1, 0x333366);
+                const nameText = `Lv.${entry.level} ${artDef.name} [${artDef.tier === 'basic' ? '初' : artDef.tier === 'mid' ? '中' : '絕'}]`;
+                const row = this.add.text(cx, iy, nameText, {
+                    fontSize: '15px', fill: '#fff', fontFamily: 'serif',
+                    backgroundColor: '#2a2a4a', padding: { x: 8, y: 4 }
+                }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-            this.add.text(220, y - 25, skill.name, {
-                fontSize: '22px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
-            }).setOrigin(0, 0.5);
-
-            this.add.text(220, y + 5, skill.desc, {
-                fontSize: '13px', color: '#aaaaaa', fontFamily: 'Microsoft JhengHei'
-            }).setOrigin(0, 0.5);
-
-            const nodeLabels = ['傷害+15%', '消耗-20%', '被動加成'];
-            for (let ni = 0; ni < 3; ni++) {
-                const nx = 520 + ni * 120;
-                const isUnlocked = tree[si] && tree[si].nodes[ni];
-                const canAfford = p.skillPoints >= SKILL_TREE_CONFIG.nodeCosts[ni];
-
-                const nodeBg = this.add.rectangle(nx, y + 10, 100, 30, isUnlocked ? 0x006600 : 0x333333)
-                    .setStrokeStyle(1, isUnlocked ? 0x00ff00 : 0x666666);
-
-                if (isUnlocked) {
-                    this.add.text(nx, y + 10, '✔ ' + nodeLabels[ni], {
-                        fontSize: '12px', color: '#00ff00', fontFamily: 'Microsoft JhengHei'
-                    }).setOrigin(0.5);
-                } else if (canAfford) {
-                    this.add.text(nx, y + 10, nodeLabels[ni] + ' (' + SKILL_TREE_CONFIG.nodeCosts[ni] + 'P)', {
-                        fontSize: '12px', color: '#ffd700', fontFamily: 'Microsoft JhengHei'
-                    }).setOrigin(0.5);
-
-                    nodeBg.setInteractive({ useHandCursor: true });
-                    nodeBg.on('pointerover', () => nodeBg.setFillStyle(0x444466));
-                    nodeBg.on('pointerout', () => nodeBg.setFillStyle(0x333333));
-                    nodeBg.on('pointerdown', () => {
-                        if (dataManager.upgradeSkillNode(si, ni)) {
-                            this.scene.restart();
+                row.on('pointerdown', () => {
+                    if (entry.level < 5) {
+                        const result = sectManager.upgradeArt(entry.id);
+                        if (result.ok) {
+                            row.setText(`Lv.${result.newLevel} ${artDef.name} [${artDef.tier === 'basic' ? '初' : artDef.tier === 'mid' ? '中' : '絕'}]`);
+                        } else {
+                            row.setColor('#ff6666');
+                            this.time.delayedCall(2000, () => {
+                                row.setColor('#fff');
+                            });
                         }
-                    });
-                } else {
-                    this.add.text(nx, y + 10, nodeLabels[ni] + ' (' + SKILL_TREE_CONFIG.nodeCosts[ni] + 'P)', {
-                        fontSize: '12px', color: '#555555', fontFamily: 'Microsoft JhengHei'
-                    }).setOrigin(0.5);
-                }
-            }
-
-            if (tree[si] && tree[si].nodes[2]) {
-                const passive = SKILL_TREE_CONFIG.passives[charId];
-                this.add.text(900, y + 10, '被動: ' + passive.desc, {
-                    fontSize: '12px', color: '#88ff88', fontFamily: 'Microsoft JhengHei'
-                }).setOrigin(0, 0.5);
-            }
+                    }
+                });
+                iy += 30;
+            });
         }
 
-        this.add.text(640, 680, '按 ESC 或 V 關閉', {
-            fontSize: '20px', color: '#888888', fontFamily: 'Microsoft JhengHei'
+        iy += 10;
+        this.add.text(cx, iy, '--- 裝備欄位 (1-4) ---', {
+            fontSize: '18px', fill: '#ffd700', fontFamily: 'serif'
         }).setOrigin(0.5);
+        iy += 28;
 
-        this.input.keyboard.on('keydown-ESC', () => this.close());
+        for (let slot = 0; slot < 4; slot++) {
+            const equippedId = p.equippedSkills[slot];
+            let slotLabel;
+            if (equippedId) {
+                const artDef = sectManager.getArtDefinition(equippedId);
+                slotLabel = `欄${slot + 1}: ${artDef?.name || equippedId}`;
+            } else {
+                slotLabel = `欄${slot + 1}: 空`;
+            }
+
+            const slotText = this.add.text(cx, iy, slotLabel, {
+                fontSize: '16px', fill: equippedId ? '#00ffcc' : '#666', fontFamily: 'serif',
+                backgroundColor: '#333', padding: { x: 8, y: 4 }
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+            slotText.on('pointerdown', () => {
+                this.showSkillPicker(slot);
+            });
+            iy += 30;
+        }
+
+        iy += 20;
+        const closeBtn = this.add.text(cx, iy, '[ 關閉 (V) ]', {
+            fontSize: '18px', fill: '#ff6666', fontFamily: 'serif',
+            backgroundColor: '#333', padding: { x: 12, y: 6 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+        closeBtn.on('pointerdown', () => this.close());
         this.input.keyboard.on('keydown-V', () => this.close());
+    }
+
+    showSkillPicker(slotIndex) {
+        const p = dataManager.data.player;
+        const cx = 400;
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.8).setInteractive().setDepth(10);
+        const panel = this.add.rectangle(cx, 360, 350, 400, 0x1a1a2e).setStrokeStyle(2, 0xc9a227).setDepth(10);
+        const elements = [overlay, panel];
+
+        let iy = 160;
+        const title = this.add.text(cx, iy, `選擇欄位 ${slotIndex + 1} 武功`, {
+            fontSize: '20px', fill: '#ffd700', fontFamily: 'serif'
+        }).setOrigin(0.5).setDepth(10);
+        elements.push(title);
+        iy += 35;
+
+        const clearBtn = this.add.text(cx, iy, '[ 清空 ]', {
+            fontSize: '16px', fill: '#ff6666', fontFamily: 'serif',
+            backgroundColor: '#333', padding: { x: 8, y: 4 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(10);
+        elements.push(clearBtn);
+        clearBtn.on('pointerdown', () => {
+            p.equippedSkills[slotIndex] = null;
+            elements.forEach(e => e.destroy());
+            this.scene.restart();
+        });
+        iy += 35;
+
+        p.martialArts.forEach(entry => {
+            const artDef = sectManager.getArtDefinition(entry.id);
+            if (!artDef) return;
+            if (artDef.type === 'passive') return;
+
+            const label = `Lv.${entry.level} ${artDef.name}`;
+            const row = this.add.text(cx, iy, label, {
+                fontSize: '15px', fill: '#fff', fontFamily: 'serif',
+                backgroundColor: '#2a2a4a', padding: { x: 8, y: 4 }
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(10);
+            elements.push(row);
+
+            row.on('pointerdown', () => {
+                p.equippedSkills[slotIndex] = entry.id;
+                elements.forEach(e => e.destroy());
+                this.scene.restart();
+            });
+            iy += 28;
+        });
+
+        iy += 20;
+        const closeBtn = this.add.text(cx, iy, '[ 取消 ]', {
+            fontSize: '16px', fill: '#888', fontFamily: 'serif',
+            backgroundColor: '#333', padding: { x: 8, y: 4 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true }).setDepth(10);
+        elements.push(closeBtn);
+        closeBtn.on('pointerdown', () => elements.forEach(e => e.destroy()));
     }
 
     close() {

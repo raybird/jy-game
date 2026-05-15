@@ -3,6 +3,7 @@ import { dataManager } from '../systems/DataManager.js';
 import { saveSystem } from '../systems/SaveSystem.js';
 import { soundManager } from '../systems/SoundManager.js';
 import { CHARACTERS, ENEMIES, CHARACTER_SKILLS, SKILL_TREE_CONFIG, ATTRIBUTE_CONFIG, RAGE_CONFIG, ULTIMATE_SKILLS, ATB_SPEEDS_CONFIG, ITEMS, ENEMY_TIERS, rollEnemyTier, LOOT_TABLES } from '../data/GameData.js';
+import { sectManager } from '../systems/SectManager.js';
 
 export default class BattleScene extends Phaser.Scene {
     constructor() {
@@ -21,16 +22,27 @@ export default class BattleScene extends Phaser.Scene {
         this.enemyAtb = 0;
         this.enemyReady = false;
         this.atbActive = true;
-        this.playerSpeed = dataManager.data.player.agility * ATB_SPEEDS_CONFIG.playerSpeedMultiplier;
+        const attrs = dataManager.data.player.attributes || {};
+        const agility = attrs.bra !== undefined ? attrs.bra : (dataManager.data.player.agility || 10);
+        this.playerSpeed = agility * ATB_SPEEDS_CONFIG.playerSpeedMultiplier;
         this.rage = 0;
         this.rageFullNotified = false;
 
         const charId = dataManager.data.player.characterId;
         const charData = CHARACTERS[charId];
         const enemyData = ENEMIES[this.enemyId];
-        const charSkills = CHARACTER_SKILLS[charId];
-        this.charSkills = charSkills;
-        this.skillLevels = dataManager.data.player.skills;
+
+        const equippedIds = dataManager.data.player.equippedSkills || [];
+        this.equippedSkills = equippedIds.map(id => {
+            if (!id) return null;
+            const def = sectManager.getArtDefinition(id);
+            if (!def) return null;
+            const entry = dataManager.data.player.martialArts.find(a => a.id === id);
+            return { id, def, level: entry ? entry.level : 1 };
+        });
+        while (this.equippedSkills.length < 4) this.equippedSkills.push(null);
+        this.charSkills = this.equippedSkills.map(s => s ? s.def : null);
+        this.skillLevels = this.equippedSkills.map(s => s ? s.level : 0);
 
         this.cameras.main.setBackgroundColor(0x1a1a2e);
 
@@ -268,17 +280,20 @@ export default class BattleScene extends Phaser.Scene {
         const startX = 450;
         const y = 650;
 
-        for (let i = 0; i < this.charSkills.length; i++) {
+        for (let i = 0; i < Math.max(4, this.charSkills.length); i++) {
             const skill = this.charSkills[i];
             const btn = this.add.rectangle(startX + i * 90, y, 80, 50, 0x1a1a4a)
-                .setStrokeStyle(2, 0xc9a227)
+                .setStrokeStyle(2, skill ? 0xc9a227 : 0x444444)
                 .setInteractive({ useHandCursor: true });
 
-            const label = this.add.text(startX + i * 90, y - 8, skill.name, {
-                fontSize: '13px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
+            const skillName = skill ? skill.name : `空`;
+            const skillCost = skill ? (skill.mp || skill.cost || 10) : 0;
+
+            const label = this.add.text(startX + i * 90, y - 8, skillName, {
+                fontSize: '13px', color: skill ? '#ffffff' : '#666666', fontFamily: 'Microsoft JhengHei'
             }).setOrigin(0.5);
 
-            const cost = this.add.text(startX + i * 90, y + 12, `MP: ${skill.cost}`, {
+            const cost = this.add.text(startX + i * 90, y + 12, `MP: ${skillCost}`, {
                 fontSize: '10px', color: '#888888', fontFamily: 'Arial'
             }).setOrigin(0.5);
 
@@ -326,7 +341,9 @@ export default class BattleScene extends Phaser.Scene {
     attack() {
         if (!this.battleActive || !this.playerTurn) return;
 
-        const damage = 10 + Math.floor(dataManager.data.player.strength * 0.5);
+        const attrs = dataManager.data.player.attributes || {};
+        const str = attrs.str !== undefined ? attrs.str : (dataManager.data.player.strength || 10);
+        const damage = 10 + Math.floor(str * 0.5);
         this.playerAttackAnimation();
         this.time.delayedCall(300, () => this.dealDamageToEnemy(damage));
     }
@@ -335,11 +352,9 @@ export default class BattleScene extends Phaser.Scene {
         if (!this.battleActive || !this.playerTurn) return;
 
         const skill = this.charSkills[index];
+        if (!skill) return;
         const skillLevel = this.skillLevels[index] || 0;
-        const skillTreeData = dataManager.data.player.skillTree[index] || { nodes: [false, false, false] };
-        const nodeEffects = skillTreeData.nodes || [];
-        const costReduction = nodeEffects[1] ? SKILL_TREE_CONFIG.nodeEffects[1].costReduction : 0;
-        const mpCost = Math.floor(skill.cost * (1 - costReduction));
+        const mpCost = skill.mp || skill.cost || 10;
 
         if (this.playerMp < mpCost) {
             this.log('⚠️ MP不足！');
@@ -376,26 +391,28 @@ export default class BattleScene extends Phaser.Scene {
         soundManager.play('skill');
         this.skillAnimation(index);
         this.time.delayedCall(400, () => {
-            const damage = this.calculateSkillDamage(skill, skillLevel, nodeEffects, index);
+            const damage = this.calculateSkillDamage(skill, skillLevel, index);
             this.dealDamageToEnemy(damage, skill);
         });
     }
 
-    calculateSkillDamage(skill, skillLevel, nodeEffects, skillIndex) {
-        const str = dataManager.data.player.strength;
-        const ip = dataManager.data.player.innerPower;
+    calculateSkillDamage(skill, skillLevel, skillIndex) {
+        const attrs = dataManager.data.player.attributes || {};
+        const str = attrs.str !== undefined ? attrs.str : (dataManager.data.player.strength || 10);
+        const wis = attrs.wis !== undefined ? attrs.wis : (dataManager.data.player.innerPower || 10);
+        const bra = attrs.bra !== undefined ? attrs.bra : 10;
         const baseAtk = 10 + str * 0.5;
 
-        let damage = baseAtk * skill.damageRatio;
+        const damageRatio = skill.ratio || skill.damageRatio || 1.0;
+        let damage = baseAtk * damageRatio;
 
         if (skill.type === 'inner') {
-            damage += ip * 0.3;
+            damage += wis * 0.3;
         }
 
-        const damageBonus = nodeEffects[0] ? SKILL_TREE_CONFIG.nodeEffects[0].damageBonus : 0;
-        damage *= (1 + damageBonus);
+        damage *= (1 + (skillLevel - 1) * 0.08);
 
-        let critRate = 0.1;
+        let critRate = 0.1 + bra * 0.005;
         if (skill.critBonus) critRate += skill.critBonus;
 
         const isCrit = Math.random() < critRate;
@@ -477,10 +494,13 @@ export default class BattleScene extends Phaser.Scene {
 
         const charId = dataManager.data.player.characterId;
         const ultimate = ULTIMATE_SKILLS[charId];
+        if (!ultimate) return;
         this.log('🔥 釋放絕招：' + ultimate.name + '！');
 
         if (ultimate.damageRatio > 0) {
-            const baseAtk = 10 + dataManager.data.player.strength * 0.5;
+            const attrs = dataManager.data.player.attributes || {};
+            const str = attrs.str !== undefined ? attrs.str : (dataManager.data.player.strength || 10);
+            const baseAtk = 10 + str * 0.5;
             const weaponAtk = this.getEquipmentStat('attack', 0);
             const damage = Math.floor((baseAtk + weaponAtk) * ultimate.damageRatio);
             this.dealDamageToEnemy(damage, { ignoreDef: ultimate.ignoreDef || false, hits: ultimate.hits || 1 });
@@ -779,7 +799,7 @@ export default class BattleScene extends Phaser.Scene {
         if (skill && skill.hits && skill.hits > 1) {
             this.log('⚡ 連擊！第 2 段！');
             this.time.delayedCall(300, () => {
-                const secondDmg = this.calculateSkillDamage(skill, 0, [], null);
+                const secondDmg = this.calculateSkillDamage(skill, 0, null);
                 this.dealDamageToEnemy(secondDmg, null);
             });
             return;
@@ -818,7 +838,8 @@ export default class BattleScene extends Phaser.Scene {
     }
 
     dealDamageToPlayer(damage) {
-        const agi = dataManager.data.player.agility;
+        const attrs = dataManager.data.player.attributes || {};
+        const agi = attrs.bra !== undefined ? attrs.bra : (dataManager.data.player.agility || 10);
         const dodgeChance = agi / (agi + 50);
         if (Math.random() < dodgeChance) {
             this.log('💨 閃避了攻擊！');
