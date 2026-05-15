@@ -4,6 +4,7 @@ import { saveSystem } from '../systems/SaveSystem.js';
 import { soundManager } from '../systems/SoundManager.js';
 import { CHARACTERS, ENEMIES, CHARACTER_SKILLS, SKILL_TREE_CONFIG, ATTRIBUTE_CONFIG, RAGE_CONFIG, ULTIMATE_SKILLS, ATB_SPEEDS_CONFIG, ITEMS, ENEMY_TIERS, rollEnemyTier, LOOT_TABLES } from '../data/GameData.js';
 import { sectManager } from '../systems/SectManager.js';
+import { questManager } from '../systems/QuestManager.js';
 
 export default class BattleScene extends Phaser.Scene {
     constructor() {
@@ -1154,6 +1155,8 @@ export default class BattleScene extends Phaser.Scene {
             this.log(`📖 +${Math.floor(expGain * 0.5)} 學點  ⭐ +${this.enemyTier === 'boss' ? 30 : this.enemyTier === 'elite' ? 10 : 2} 名聲`);
 
             this.grantLoot();
+            questManager.onKill(this.enemyId);
+            questManager.checkCompletion();
             dataManager.data.player.battleCount++;
             dataManager.data.player.killCount++;
             dataManager.checkAchievements();

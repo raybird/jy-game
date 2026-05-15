@@ -3,6 +3,7 @@ import { dataManager } from '../systems/DataManager.js';
 import { saveSystem } from '../systems/SaveSystem.js';
 import { CHARACTERS, CHARACTER_SKILLS, ENCOUNTER_CONFIG, ITEMS, SECTS, SKILL_COSTS } from '../data/GameData.js';
 import { sectManager } from '../systems/SectManager.js';
+import { questManager } from '../systems/QuestManager.js';
 
 export default class WorldScene extends Phaser.Scene {
     constructor() {
@@ -16,6 +17,8 @@ export default class WorldScene extends Phaser.Scene {
     create() {
         dataManager.data.inBattle = false;
         dataManager.data.currentMap = this.currentMap;
+        questManager.onArriveMap(this.currentMap);
+        questManager.checkCompletion();
 
         this.cameras.main.setBackgroundColor(0x1a1a2e);
 
@@ -24,6 +27,7 @@ export default class WorldScene extends Phaser.Scene {
         this.createPlayer();
         this.setupHUD();
         this.setupNPCs();
+        this.setupQuestNPCs();
         this.setupSectNPCs();
         this.setupExits();
 
@@ -43,6 +47,10 @@ export default class WorldScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-C', () => {
             this.scene.pause();
             this.scene.launch('PlayerInfoScene');
+        });
+        this.input.keyboard.on('keydown-J', () => {
+            this.scene.pause();
+            this.scene.launch('QuestPanelScene');
         });
         this.updateHUD();
     }
@@ -411,6 +419,102 @@ export default class WorldScene extends Phaser.Scene {
             });
             hitbox.on('pointerdown', () => this.interactWithSectNPC(key));
         });
+    }
+
+    setupQuestNPCs() {
+        if (this.currentMap !== 'xianyang') return;
+
+        const npcs = [
+            { id: 'escort', x: 500, y: 150, name: '鏢局', color: 0xdaa520, icon: '🛡' },
+            { id: 'bounty', x: 380, y: 550, name: '告示板', color: 0x8b4513, icon: '📋' },
+        ];
+
+        npcs.forEach(npc => {
+            const container = this.add.container(npc.x, npc.y);
+            const shadow = this.add.ellipse(0, 35, 50, 20, 0x000000, 0.3);
+            const body = this.add.rectangle(0, 10, 40, 50, npc.color);
+            const head = this.add.circle(0, -20, 18, 0xffdbac);
+            const label = this.add.text(0, -55, npc.name, {
+                fontSize: '14px', color: '#ffd700', fontFamily: 'serif',
+                stroke: '#000', strokeThickness: 2
+            }).setOrigin(0.5);
+            const icon = this.add.text(0, 10, npc.icon, { fontSize: '24px' }).setOrigin(0.5);
+            const interactHint = this.add.text(0, 60, '點擊互動', {
+                fontSize: '12px', color: '#c9a227', fontFamily: 'serif'
+            }).setOrigin(0.5).setAlpha(0);
+
+            container.add([shadow, body, head, icon, label, interactHint]);
+
+            const hitbox = this.add.rectangle(npc.x, npc.y, 60, 80, 0xffffff, 0)
+                .setInteractive({ useHandCursor: true });
+            hitbox.setData('npcId', 'quest_' + npc.id);
+            hitbox.setData('container', container);
+            hitbox.setData('hint', interactHint);
+
+            hitbox.on('pointerover', () => {
+                this.tweens.add({ targets: interactHint, alpha: 1, duration: 200 });
+                container.setScale(1.05);
+            });
+            hitbox.on('pointerout', () => {
+                this.tweens.add({ targets: interactHint, alpha: 0, duration: 200 });
+                container.setScale(1);
+            });
+            hitbox.on('pointerdown', () => this.interactWithQuestNPC(npc.id));
+        });
+    }
+
+    interactWithQuestNPC(npcId) {
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setInteractive();
+        const panel = this.add.rectangle(640, 360, 500, 420, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
+        const elements = [overlay, panel];
+
+        let iy = 120;
+        const titles = { escort: '🛡 鏢局護送', bounty: '📋 賞金任務' };
+        const title = this.add.text(640, iy, titles[npcId] || '任務', {
+            fontSize: '26px', fill: '#ffd700', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        elements.push(title);
+        iy += 45;
+
+        const quests = {
+            escort: [{ id: 'escort_1', name: '護送鏢物 → 光明頂', desc: '鏢局委託，將鏢物送至光明頂' }],
+            bounty: [
+                { id: 'bounty_1', name: '擊敗全真弟子 ×5', desc: '賞金：消除全真弟子的威脅' },
+                { id: 'bounty_2', name: '擊敗明教教徒 ×3', desc: '賞金：消除明教教徒的威脅' },
+            ],
+        };
+
+        const npcQuests = quests[npcId] || [];
+        npcQuests.forEach(q => {
+            const row = this.add.text(640, iy, `${q.name}`, {
+                fontSize: '16px', fill: '#fff', fontFamily: 'serif',
+                backgroundColor: '#2a2a4a', padding: { x: 8, y: 4 }
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            row.on('pointerdown', () => {
+                const result = questManager.startQuest(q.id);
+                if (result.ok) {
+                    row.setColor('#88ff88');
+                    row.setText(`${q.name} ✅`);
+                } else {
+                    row.setColor('#ff6666');
+                    this.time.delayedCall(2000, () => {
+                        row.setColor('#fff');
+                        row.setText(`${q.name}`);
+                    });
+                }
+            });
+            elements.push(row);
+            iy += 32;
+        });
+
+        iy += 30;
+        const closeBtn = this.add.rectangle(640, iy + 20, 100, 36, 0x8b0000)
+            .setStrokeStyle(2, 0xff4444).setInteractive({ useHandCursor: true });
+        const closeLabel = this.add.text(640, iy + 20, '關閉', {
+            fontSize: '16px', fill: '#fff', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        elements.push(closeBtn, closeLabel);
+        closeBtn.on('pointerdown', () => this.closePanel(elements));
     }
 
     interactWithSectNPC(sectKey) {
