@@ -432,3 +432,36 @@ export const SKILL_COSTS = {
     studyPointsUpgrade: [0, 30, 80, 150, 300],
     combatExpUpgrade: [0, 100, 300, 600, 1000],
 };
+
+export const QUEST_TEMPLATES = {
+    escort_1: {
+        id: 'escort_1', title: '護送鏢物', type: 'escort',
+        desc: '將鏢物從襄陽城護送到光明頂',
+        objectives: [{ type: 'escort', target: 'guangming', label: '抵達光明頂', current: 0, count: 1 }],
+        rewards: { silver: 500, fame: 15, studyPoints: 30 },
+    },
+    bounty_1: {
+        id: 'bounty_1', title: '賞金獵人：全真弟子', type: 'bounty',
+        desc: '擊敗 5 名全真弟子',
+        objectives: [{ type: 'kill', target: 'quanzhen_disciple', label: '擊敗全真弟子', current: 0, count: 5 }],
+        rewards: { silver: 300, studyPoints: 40 },
+    },
+    bounty_2: {
+        id: 'bounty_2', title: '賞金獵人：明教教徒', type: 'bounty',
+        desc: '擊敗 3 名明教教徒',
+        objectives: [{ type: 'kill', target: 'mingjiao_member', label: '擊敗明教教徒', current: 0, count: 3 }],
+        rewards: { silver: 400, studyPoints: 50 },
+    },
+    sect_1: {
+        id: 'sect_1', title: '門派巡邏', type: 'sect',
+        desc: '清除門派周邊的敵人',
+        objectives: [{ type: 'kill', target: 'any', label: '擊敗任意敵人', current: 0, count: 3 }],
+        rewards: { sectRep: 100, studyPoints: 20 },
+    },
+    sect_2: {
+        id: 'sect_2', title: '收集草藥', type: 'sect',
+        desc: '收集 5 株草藥',
+        objectives: [{ type: 'collect', target: 'herb', label: '收集草藥', current: 0, count: 5 }],
+        rewards: { sectRep: 80, silver: 100 },
+    },
+};
