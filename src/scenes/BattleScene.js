@@ -1116,11 +1116,21 @@ export default class BattleScene extends Phaser.Scene {
             const tierCfg = ENEMY_TIERS[this.enemyTier];
             const expGain = tierCfg.exp;
             const silverGain = tierCfg.silver;
+
             dataManager.data.player.exp += expGain;
             dataManager.addSilver(silverGain);
             dataManager.checkLevelUp();
 
+            dataManager.addCombatExp(expGain);
+            dataManager.addStudyPoints(Math.floor(expGain * 0.5));
+
+            if (this.enemyTier === 'boss') dataManager.addFame(30);
+            else if (this.enemyTier === 'elite') dataManager.addFame(10);
+            else dataManager.addFame(2);
+            dataManager.addKarma(2);
+
             this.log(`✨ 獲得 ${expGain} 經驗，${silverGain} 銀兩！`);
+            this.log(`📖 +${Math.floor(expGain * 0.5)} 學點  ⭐ +${this.enemyTier === 'boss' ? 30 : this.enemyTier === 'elite' ? 10 : 2} 名聲`);
 
             this.grantLoot();
             dataManager.data.player.battleCount++;
