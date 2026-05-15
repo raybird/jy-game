@@ -213,6 +213,37 @@ export const LOOT_TABLES = {
     }
 };
 
+export const FIVE_ATTRS = {
+    str: { label: '臂力', short: 'STR', desc: '影響物理攻擊力' },
+    bra: { label: '膽識', short: 'BRA', desc: '影響暴擊率' },
+    wis: { label: '悟性', short: 'WIS', desc: '影響學點消耗折扣' },
+    luk: { label: '福緣', short: 'LUK', desc: '影響稀有掉落率' },
+    con: { label: '定力', short: 'CON', desc: '影響防禦與狀態抗性' },
+};
+
+export const INITIAL_PLAYER = {
+    name: '少俠',
+    level: 1,
+    attributes: { str: 10, bra: 10, wis: 10, luk: 10, con: 10 },
+    attributePoints: 50,
+    hp: 100,
+    maxHp: 100,
+    mp: 50,
+    maxMp: 50,
+    combatExp: 0,
+    studyPoints: 0,
+    fame: 0,
+    karma: 0,
+    sect: null,
+    sectReputation: 0,
+    martialArts: [],
+    equippedSkills: [null, null, null, null],
+    inventory: [],
+    equipped: { weapon: null, armor: null, accessory: null },
+    silver: 1000,
+    currentMap: 'xianyang',
+};
+
 export const ACHIEVEMENTS = {
     first_battle: { name: '初出茅廬', desc: '完成第一次戰鬥', reward: { silver: 100 } },
     veteran: { name: '百戰勇士', desc: '戰鬥 10 次', reward: { item: 'herb_potion', amount: 3 } },

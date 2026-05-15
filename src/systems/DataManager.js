@@ -1,4 +1,4 @@
-import { SKILL_TREE_CONFIG, ITEMS, ACHIEVEMENTS } from '../data/GameData.js';
+import { SKILL_TREE_CONFIG, ITEMS, ACHIEVEMENTS, INITIAL_PLAYER, FIVE_ATTRS } from '../data/GameData.js';
 import { soundManager } from './SoundManager.js';
 
 class DataManager {
@@ -32,7 +32,17 @@ class DataManager {
                 achievements: {},
                 battleCount: 0,
                 killCount: 0,
-                titles: []
+                titles: [],
+                combatExp: 0,
+                studyPoints: 0,
+                fame: 0,
+                karma: 0,
+                sect: null,
+                sectReputation: 0,
+                martialArts: [],
+                equippedSkills: [null, null, null, null],
+                attributes: { str: 10, bra: 10, wis: 10, luk: 10, con: 10 },
+                attributePoints: 50
             },
             lifeSkills: {
                 herbalism: { level: 1, exp: 0 },
@@ -76,7 +86,17 @@ class DataManager {
             achievements: {},
             battleCount: 0,
             killCount: 0,
-            titles: []
+            titles: [],
+            combatExp: 0,
+            studyPoints: 0,
+            fame: 0,
+            karma: 0,
+            sect: null,
+            sectReputation: 0,
+            martialArts: [],
+            equippedSkills: [null, null, null, null],
+            attributes: { str: 10, bra: 10, wis: 10, luk: 10, con: 10 },
+            attributePoints: 50
         };
     }
 
@@ -228,6 +248,44 @@ class DataManager {
 
     unequipItem(slot) {
         this.data.player.equipped[slot] = null;
+    }
+
+    getLevelExpRequirement() {
+        return this.data.player.level * 200;
+    }
+
+    addCombatExp(amount) {
+        this.data.player.combatExp += amount;
+        const required = this.getLevelExpRequirement();
+        while (this.data.player.combatExp >= required) {
+            this.data.player.combatExp -= required;
+            this.data.player.level += 1;
+            this.data.player.maxHp += 20;
+            this.data.player.hp = this.data.player.maxHp;
+            this.data.player.maxMp += 10;
+            this.data.player.mp = this.data.player.maxMp;
+        }
+    }
+
+    addStudyPoints(amount) {
+        this.data.player.studyPoints += Math.floor(amount);
+    }
+
+    addFame(amount) {
+        this.data.player.fame = Math.max(0, this.data.player.fame + amount);
+    }
+
+    addKarma(amount) {
+        this.data.player.karma = Math.max(-1000, Math.min(1000, this.data.player.karma + amount));
+    }
+
+    getKarmaTitle() {
+        const k = this.data.player.karma;
+        if (k >= 500) return '大俠';
+        if (k >= 200) return '俠士';
+        if (k > -200) return '中立';
+        if (k > -500) return '惡徒';
+        return '魔頭';
     }
 
     getData() {
