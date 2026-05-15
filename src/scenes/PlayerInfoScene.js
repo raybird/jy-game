@@ -1,5 +1,6 @@
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
+import { sectManager } from '../systems/SectManager.js';
 import { FIVE_ATTRS } from '../data/GameData.js';
 
 export class PlayerInfoScene extends Phaser.Scene {
@@ -62,7 +63,8 @@ export class PlayerInfoScene extends Phaser.Scene {
         iy += 10;
 
         const sectName = p.sect || '無門派';
-        const sectLine = `門派：${sectName}${p.sect ? '  聲望：' + (p.sectReputation || 0) : ''}`;
+        const rank = p.sect ? sectManager.getRank().name : '';
+        const sectLine = `門派：${sectName}${p.sect ? '  [' + rank + ']' : ''}${p.sect ? '  聲望：' + (p.sectReputation || 0) : ''}`;
         this.add.text(cx, iy, sectLine, {
             fontSize: '18px', fill: '#ffffff', fontFamily: 'serif'
         }).setOrigin(0.5);

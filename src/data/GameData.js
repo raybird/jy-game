@@ -48,9 +48,13 @@ export const ENEMIES = {
 
 export const RECIPES = {
     iron_sword: { name: '鐵劍', type: 'weapon', skill: 'smithing', levelRequired: 1, materials: { iron_ore: 2 }, result: 'iron_sword', stats: { attack: 10 } },
-    herb_potion: { name: '草藥水', type: 'consumable', skill: 'herbalism', levelRequired: 1, materials: { herb: 3 }, result: 'herb_potion', effect: { hp: 50 } },
+    herb_potion: { name: '草藥水', type: 'consumable', skill: 'alchemy', levelRequired: 1, materials: { herb: 3 }, result: 'herb_potion', effect: { hp: 50 } },
     leather_armor: { name: '皮甲', type: 'armor', skill: 'tailoring', levelRequired: 1, materials: { leather: 2 }, result: 'leather_armor', stats: { defense: 5 } },
-    bronze_pickaxe: { name: '青銅鎬', type: 'tool', skill: 'smithing', levelRequired: 2, materials: { bronze_ore: 3 }, result: 'bronze_pickaxe', effect: { mining_bonus: 1 } }
+    bronze_pickaxe: { name: '青銅鎬', type: 'tool', skill: 'smithing', levelRequired: 2, materials: { bronze_ore: 3 }, result: 'bronze_pickaxe', effect: { mining_bonus: 1 } },
+    hp_pill: { name: '回命丹', type: 'consumable', skill: 'alchemy', levelRequired: 2, materials: { herb: 5, ginseng: 1 }, result: 'hp_pill', effect: { hp: 150 } },
+    mp_pill: { name: '聚氣丹', type: 'consumable', skill: 'alchemy', levelRequired: 3, materials: { herb: 3, ginseng: 1 }, result: 'mp_pill', effect: { mp: 80 } },
+    atk_food: { name: '力量飯糰', type: 'consumable', skill: 'cooking', levelRequired: 1, materials: { rice: 3, fish: 1 }, result: 'atk_food', effect: { atkBuff: { amount: 5, duration: 180 } } },
+    def_food: { name: '鐵骨湯', type: 'consumable', skill: 'cooking', levelRequired: 2, materials: { fish: 2, herb: 1 }, result: 'def_food', effect: { defBuff: { amount: 3, duration: 180 } } },
 };
 
 export const ITEMS = {
@@ -464,4 +468,42 @@ export const QUEST_TEMPLATES = {
         objectives: [{ type: 'collect', target: 'herb', label: '收集草藥', current: 0, count: 5 }],
         rewards: { sectRep: 80, silver: 100 },
     },
+};
+
+export const NEW_ITEMS = {
+    fish: { name: '魚', type: 'material' },
+    rice: { name: '米', type: 'material' },
+    gold_ore: { name: '金礦', type: 'material' },
+    ginseng: { name: '人蔘', type: 'material' },
+    hp_pill: { name: '回命丹', type: 'consumable', effect: { hp: 150 } },
+    mp_pill: { name: '聚氣丹', type: 'consumable', effect: { mp: 80 } },
+    atk_food: { name: '力量飯糰', type: 'consumable', effect: { atkBuff: { amount: 5, duration: 180 } } },
+    def_food: { name: '鐵骨湯', type: 'consumable', effect: { defBuff: { amount: 3, duration: 180 } } },
+};
+
+export const GATHERING_SPOTS = {
+    xianyang: [
+        { type: 'herb', x: 100, y: 620, name: '野草藥', yield: { id: 'herb', min: 1, max: 2 }, cd: 5000 },
+        { type: 'herb', x: 1150, y: 580, name: '路邊藥草', yield: { id: 'herb', min: 1, max: 2 }, cd: 5000 },
+        { type: 'mining', x: 1180, y: 460, name: '城牆礦石', yield: { id: 'iron_ore', min: 1, max: 2 }, cd: 6000 },
+    ],
+    zhongnan: [
+        { type: 'herb', x: 200, y: 500, name: '山間藥草', yield: { id: 'herb', min: 2, max: 3 }, cd: 5000 },
+        { type: 'herb', x: 1000, y: 400, name: '稀有藥草', yield: { id: 'herb', min: 1, max: 3 }, cd: 6000 },
+        { type: 'mining', x: 600, y: 350, name: '山壁礦石', yield: { id: 'iron_ore', min: 1, max: 3 }, cd: 6000 },
+        { type: 'mining', x: 800, y: 600, name: '青銅礦脈', yield: { id: 'bronze_ore', min: 1, max: 2 }, cd: 8000 },
+        { type: 'fishing', x: 300, y: 300, name: '溪流釣點', yield: { id: 'fish', min: 1, max: 2 }, cd: 4000 },
+    ],
+    guangming: [
+        { type: 'mining', x: 400, y: 550, name: '礦坑入口', yield: { id: 'bronze_ore', min: 2, max: 4, rare: { id: 'gold_ore', chance: 0.1 } }, cd: 7000 },
+        { type: 'herb', x: 900, y: 300, name: '高山靈藥', yield: { id: 'herb', min: 2, max: 4 }, cd: 6000 },
+        { type: 'fishing', x: 1100, y: 550, name: '山泉釣點', yield: { id: 'fish', min: 1, max: 2 }, cd: 4000 },
+        { type: 'farming', x: 200, y: 650, name: '肥沃農地', yield: { id: 'rice', min: 2, max: 4, rare: { id: 'ginseng', chance: 0.05 } }, cd: 10000 },
+    ],
+};
+
+export const CRAFT_QUALITY = {
+    tiers: ['普通', '精良', '極品'],
+    chances: [0.6, 0.3, 0.1],
+    statMultiplier: [1.0, 1.3, 1.8],
 };

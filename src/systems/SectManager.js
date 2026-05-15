@@ -2,6 +2,14 @@ import { dataManager } from './DataManager.js';
 import { SECTS, SKILL_COSTS } from '../data/GameData.js';
 import { soundManager } from './SoundManager.js';
 
+export const SECT_RANKS = [
+    { name: '弟子', minRep: 0 },
+    { name: '精英弟子', minRep: 300 },
+    { name: '入室弟子', minRep: 1000 },
+    { name: '護法', minRep: 2500 },
+    { name: '掌門', minRep: 5000 },
+];
+
 class SectManager {
     getAvailableSects() {
         return Object.entries(SECTS).map(([key, sect]) => ({
@@ -120,6 +128,27 @@ class SectManager {
         const entry = p.martialArts.find(a => a.id === artId);
         if (entry && entry.ratio) return entry;
         return null;
+    }
+
+    getRank() {
+        const rep = dataManager.data.player.sectReputation || 0;
+        let rank = SECT_RANKS[0];
+        for (const r of SECT_RANKS) {
+            if (rep >= r.minRep) rank = r;
+        }
+        return rank;
+    }
+
+    donate(sectKey, silver, studyPoints) {
+        const p = dataManager.data.player;
+        if (p.sect !== sectKey) return { ok: false, reason: '非本門派' };
+        if (silver > p.silver) return { ok: false, reason: '銀兩不足' };
+        if (studyPoints > p.studyPoints) return { ok: false, reason: '學點不足' };
+        p.silver -= silver;
+        p.studyPoints -= studyPoints;
+        const repGain = Math.floor(silver / 10) + studyPoints;
+        p.sectReputation = (p.sectReputation || 0) + repGain;
+        return { ok: true, repGain };
     }
 }
 

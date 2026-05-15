@@ -1,8 +1,9 @@
-import { SKILL_TREE_CONFIG, ITEMS, ACHIEVEMENTS, INITIAL_PLAYER, FIVE_ATTRS } from '../data/GameData.js';
+import { SKILL_TREE_CONFIG, ITEMS, ACHIEVEMENTS, INITIAL_PLAYER, FIVE_ATTRS, RECIPES, CRAFT_QUALITY } from '../data/GameData.js';
 import { soundManager } from './SoundManager.js';
 
 class DataManager {
     constructor() {
+        this.gatheringCooldowns = {};
         this.data = {
             player: {
                 name: '',
@@ -48,7 +49,11 @@ class DataManager {
                 herbalism: { level: 1, exp: 0 },
                 mining: { level: 1, exp: 0 },
                 smithing: { level: 1, exp: 0 },
-                tailoring: { level: 1, exp: 0 }
+                tailoring: { level: 1, exp: 0 },
+                alchemy: { level: 1, exp: 0 },
+                cooking: { level: 1, exp: 0 },
+                fishing: { level: 1, exp: 0 },
+                farming: { level: 1, exp: 0 },
             },
             auction: { listings: [] },
             wallet: { transactions: [] },
@@ -286,6 +291,59 @@ class DataManager {
         if (k > -200) return '中立';
         if (k > -500) return '惡徒';
         return '魔頭';
+    }
+
+    addLifeSkillExp(skillId, amount) {
+        const skill = this.data.lifeSkills[skillId];
+        if (!skill) return;
+        skill.exp += amount;
+        const expNeeded = skill.level * 100;
+        while (skill.exp >= expNeeded) {
+            skill.exp -= expNeeded;
+            skill.level++;
+        }
+    }
+
+    canGather(spotId) {
+        const now = Date.now();
+        const cd = this.gatheringCooldowns[spotId] || 0;
+        return now >= cd;
+    }
+
+    setGatherCooldown(spotId, ms) {
+        this.gatheringCooldowns[spotId] = Date.now() + ms;
+    }
+
+    craftItem(recipeKey) {
+        const recipe = RECIPES[recipeKey];
+        if (!recipe) return { ok: false, reason: '配方不存在' };
+
+        const skill = this.data.lifeSkills[recipe.skill];
+        if (!skill || skill.level < recipe.levelRequired)
+            return { ok: false, reason: `需要 ${recipe.skill} Lv.${recipe.levelRequired}` };
+
+        for (const [matId, count] of Object.entries(recipe.materials)) {
+            if (this.getItemCount(matId) < count)
+                return { ok: false, reason: `材料不足: ${matId} x${count}` };
+        }
+
+        for (const [matId, count] of Object.entries(recipe.materials)) {
+            this.removeItem(matId, count);
+        }
+
+        const roll = Math.random();
+        let cum = 0, qualityIdx = 0;
+        for (let i = 0; i < CRAFT_QUALITY.chances.length; i++) {
+            cum += CRAFT_QUALITY.chances[i] + (skill.level * 0.01);
+            if (roll < cum) { qualityIdx = i; break; }
+        }
+        const quality = CRAFT_QUALITY.tiers[qualityIdx];
+        const statMul = CRAFT_QUALITY.statMultiplier[qualityIdx];
+
+        this.addItem(recipe.result, 1);
+        this.addLifeSkillExp(recipe.skill, 20 + skill.level * 5);
+
+        return { ok: true, item: recipe.result, quality, statMul, recipeName: recipe.name };
     }
 
     getData() {

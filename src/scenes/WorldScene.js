@@ -1,7 +1,7 @@
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
 import { saveSystem } from '../systems/SaveSystem.js';
-import { CHARACTERS, CHARACTER_SKILLS, ENCOUNTER_CONFIG, ITEMS, SECTS, SKILL_COSTS } from '../data/GameData.js';
+import { CHARACTERS, CHARACTER_SKILLS, ENCOUNTER_CONFIG, ITEMS, SECTS, SKILL_COSTS, GATHERING_SPOTS, RECIPES } from '../data/GameData.js';
 import { sectManager } from '../systems/SectManager.js';
 import { questManager } from '../systems/QuestManager.js';
 import { chatSystem } from '../systems/ChatSystem.js';
@@ -31,6 +31,7 @@ export default class WorldScene extends Phaser.Scene {
         this.setupQuestNPCs();
         this.setupSectNPCs();
         this.setupFusionNPC();
+        this.setupGatheringSpots();
         this.setupExits();
 
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -378,7 +379,7 @@ export default class WorldScene extends Phaser.Scene {
 
         switch (npcId) {
             case 'smith': this.showLifeSkillMenu('smithing', panel, overlay); break;
-            case 'herbalist': this.showLifeSkillMenu('herbalism', panel, overlay); break;
+            case 'herbalist': this.showLifeSkillMenu('alchemy', panel, overlay); break;
             case 'auction': this.showAuctionMenu(panel, overlay); break;
         }
     }
@@ -456,6 +457,38 @@ export default class WorldScene extends Phaser.Scene {
             this.scene.pause();
             this.scene.launch('FusionScene');
         });
+    }
+
+    setupGatheringSpots() {
+        const spots = GATHERING_SPOTS[this.currentMap] || [];
+        spots.forEach((spot, i) => {
+            const icons = { herb: '🌿', mining: '⛏', fishing: '🎣', farming: '🌾' };
+            const spotText = this.add.text(spot.x, spot.y, icons[spot.type], {
+                fontSize: '24px'
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+            const spotId = this.currentMap + '_g_' + i;
+            spotText.on('pointerdown', () => this.gatherFromSpot(spot, spotText, spotId));
+        });
+    }
+
+    gatherFromSpot(spot, text, spotId) {
+        if (!dataManager.canGather(spotId)) return;
+
+        const skillMap = { herb: 'herbalism', mining: 'mining', farming: 'farming', fishing: 'fishing' };
+        const skillId = skillMap[spot.type];
+
+        const amount = spot.yield.min + Math.floor(Math.random() * (spot.yield.max - spot.yield.min + 1));
+        dataManager.addItem(spot.yield.id, amount);
+        dataManager.addLifeSkillExp(skillId, 10 + amount * 2);
+        dataManager.setGatherCooldown(spotId, spot.cd);
+
+        if (spot.yield.rare && Math.random() < (spot.yield.rare.chance || 0.05)) {
+            dataManager.addItem(spot.yield.rare.id, 1);
+        }
+
+        text.setAlpha(0.3);
+        this.time.delayedCall(spot.cd, () => text.setAlpha(1));
     }
 
     setupQuestNPCs() {
@@ -617,6 +650,20 @@ export default class WorldScene extends Phaser.Scene {
             });
             iy += 45;
 
+            const donateBtn = this.add.text(640, iy, '[ 捐獻 (100銀+20學點) ]', {
+                fontSize: '16px', fill: '#88ff88', fontFamily: 'serif',
+                backgroundColor: '#333', padding: { x: 12, y: 6 }
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            elements.push(donateBtn);
+            donateBtn.on('pointerdown', () => {
+                const result = sectManager.donate(sectKey, 100, 20);
+                if (result.ok) {
+                    this.closePanel(elements);
+                    this.interactWithSectNPC(sectKey);
+                }
+            });
+            iy += 45;
+
             const leaveBtn = this.add.text(640, iy, '[ 叛離門派 ]', {
                 fontSize: '18px', fill: '#ff6666', fontFamily: 'serif',
                 backgroundColor: '#333', padding: { x: 12, y: 6 }
@@ -702,8 +749,8 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     showLifeSkillMenu(skillId, panel, overlay) {
-        const skillNames = { herbalism: '采藥', mining: '採礦', smithing: '鑄造', tailoring: '縫紉' };
-        const skillIcons = { herbalism: '🌿', mining: '⛏️', smithing: '🔨', tailoring: '🧵' };
+        const skillNames = { herbalism: '採藥', mining: '採礦', smithing: '鑄造', tailoring: '縫紉', alchemy: '煉丹', cooking: '廚藝', fishing: '釣魚', farming: '耕種' };
+        const skillIcons = { herbalism: '🌿', mining: '⛏', smithing: '🔨', tailoring: '🧵', alchemy: '⚗', cooking: '🍳', fishing: '🎣', farming: '🌾' };
         const skills = dataManager.data.lifeSkills;
         const skill = skills[skillId];
         const expNeeded = skill.level * 100;
@@ -727,6 +774,16 @@ export default class WorldScene extends Phaser.Scene {
             align: 'center', wordWrap: { width: 350 }
         }).setOrigin(0.5);
 
+        const craftBtn = this.add.text(640, 400, '[ 製作物品 ]', {
+            fontSize: '18px', fill: '#ffd700', fontFamily: 'serif',
+            backgroundColor: '#2a2a4a', padding: { x: 12, y: 6 }
+        }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+        craftBtn.on('pointerdown', () => {
+            this.closePanel([title, levelText, expBarBg, expBar, expText, desc, craftBtn, closeBtn, closeText, panel, overlay]);
+            this.showCraftingPanel(skillId);
+        });
+
         const closeBtn = this.add.rectangle(640, 480, 120, 40, 0x8b0000)
             .setStrokeStyle(2, 0xff4444)
             .setInteractive({ useHandCursor: true });
@@ -736,7 +793,65 @@ export default class WorldScene extends Phaser.Scene {
 
         closeBtn.on('pointerover', () => closeBtn.setFillStyle(0xa00000));
         closeBtn.on('pointerout', () => closeBtn.setFillStyle(0x8b0000));
-        closeBtn.on('pointerdown', () => this.closePanel([title, levelText, expBarBg, expBar, expText, desc, closeBtn, closeText, panel, overlay]));
+        closeBtn.on('pointerdown', () => this.closePanel([title, levelText, expBarBg, expBar, expText, desc, craftBtn, closeBtn, closeText, panel, overlay]));
+    }
+
+    showCraftingPanel(skillId) {
+        const skillNames = { herbalism: '採藥', mining: '採礦', smithing: '鑄造', tailoring: '縫紉', alchemy: '煉丹', cooking: '廚藝' };
+        const recipes = Object.entries(RECIPES).filter(([key, r]) => r.skill === skillId);
+
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setInteractive();
+        const panel = this.add.rectangle(640, 360, 520, 480, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
+        const elements = [overlay, panel];
+
+        let iy = 100;
+        const title = this.add.text(640, iy, `製作 — ${skillNames[skillId]}`, {
+            fontSize: '24px', fill: '#ffd700', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        elements.push(title);
+        iy += 35;
+
+        if (recipes.length === 0) {
+            const empty = this.add.text(640, iy, '沒有可用配方', {
+                fontSize: '16px', fill: '#888', fontFamily: 'serif'
+            }).setOrigin(0.5);
+            elements.push(empty);
+        } else {
+            recipes.forEach(([key, recipe]) => {
+                const mats = Object.entries(recipe.materials).map(([id, count]) => {
+                    const owned = dataManager.getItemCount(id);
+                    return `${id} ${owned}/${count}`;
+                }).join(' ');
+                const row = this.add.text(640, iy, `${recipe.name}  [${mats}]`, {
+                    fontSize: '14px', fill: '#fff', fontFamily: 'serif',
+                    backgroundColor: '#2a2a4a', padding: { x: 8, y: 4 }
+                }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+                row.on('pointerdown', () => {
+                    const result = dataManager.craftItem(key);
+                    if (result.ok) {
+                        row.setColor('#88ff88');
+                        row.setText(`${recipe.name} ✅ [${result.quality}]`);
+                    } else {
+                        row.setColor('#ff6666');
+                        this.time.delayedCall(2000, () => {
+                            row.setColor('#fff');
+                            row.setText(`${recipe.name}  [${mats}]`);
+                        });
+                    }
+                });
+                elements.push(row);
+                iy += 30;
+            });
+        }
+
+        iy += 30;
+        const closeBtn = this.add.rectangle(640, iy + 20, 100, 36, 0x8b0000)
+            .setStrokeStyle(2, 0xff4444).setInteractive({ useHandCursor: true });
+        const closeLabel = this.add.text(640, iy + 20, '關閉', {
+            fontSize: '16px', fill: '#fff', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        elements.push(closeBtn, closeLabel);
+        closeBtn.on('pointerdown', () => this.closePanel(elements));
     }
 
     getSkillDescription(skillId) {
