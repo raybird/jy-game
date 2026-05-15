@@ -1,7 +1,8 @@
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
 import { saveSystem } from '../systems/SaveSystem.js';
-import { CHARACTERS, CHARACTER_SKILLS, ENCOUNTER_CONFIG, ITEMS } from '../data/GameData.js';
+import { CHARACTERS, CHARACTER_SKILLS, ENCOUNTER_CONFIG, ITEMS, SECTS, SKILL_COSTS } from '../data/GameData.js';
+import { sectManager } from '../systems/SectManager.js';
 
 export default class WorldScene extends Phaser.Scene {
     constructor() {
@@ -23,6 +24,7 @@ export default class WorldScene extends Phaser.Scene {
         this.createPlayer();
         this.setupHUD();
         this.setupNPCs();
+        this.setupSectNPCs();
         this.setupExits();
 
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -368,6 +370,194 @@ export default class WorldScene extends Phaser.Scene {
             case 'herbalist': this.showLifeSkillMenu('herbalism', panel, overlay); break;
             case 'auction': this.showAuctionMenu(panel, overlay); break;
         }
+    }
+
+    setupSectNPCs() {
+        const sects = Object.entries(SECTS).filter(([key, s]) => s.map === this.currentMap);
+        if (sects.length === 0) return;
+
+        sects.forEach(([key, sect]) => {
+            const x = sect.npcX || 640;
+            const y = sect.npcY || 400;
+            const container = this.add.container(x, y);
+
+            const shadow = this.add.ellipse(0, 35, 50, 20, 0x000000, 0.3);
+            const body = this.add.rectangle(0, 10, 40, 50, 0xc9a227);
+            const head = this.add.circle(0, -20, 18, 0xffdbac);
+            const label = this.add.text(0, -55, sect.npcName + ' [' + sect.name + ']', {
+                fontSize: '14px', color: '#ffd700', fontFamily: 'serif',
+                stroke: '#000', strokeThickness: 2
+            }).setOrigin(0.5);
+            const icon = this.add.text(0, 10, '👤', { fontSize: '24px' }).setOrigin(0.5);
+            const interactHint = this.add.text(0, 60, '點擊互動', {
+                fontSize: '12px', color: '#c9a227', fontFamily: 'serif'
+            }).setOrigin(0.5).setAlpha(0);
+
+            container.add([shadow, body, head, icon, label, interactHint]);
+
+            const hitbox = this.add.rectangle(x, y, 60, 80, 0xffffff, 0)
+                .setInteractive({ useHandCursor: true });
+            hitbox.setData('npcId', 'sect_' + key);
+            hitbox.setData('container', container);
+            hitbox.setData('hint', interactHint);
+
+            hitbox.on('pointerover', () => {
+                this.tweens.add({ targets: interactHint, alpha: 1, duration: 200 });
+                container.setScale(1.05);
+            });
+            hitbox.on('pointerout', () => {
+                this.tweens.add({ targets: interactHint, alpha: 0, duration: 200 });
+                container.setScale(1);
+            });
+            hitbox.on('pointerdown', () => this.interactWithSectNPC(key));
+        });
+    }
+
+    interactWithSectNPC(sectKey) {
+        const p = dataManager.data.player;
+        const sect = SECTS[sectKey];
+
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setInteractive();
+        const panel = this.add.rectangle(640, 360, 500, 400, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
+        const elements = [overlay, panel];
+
+        let iy = 140;
+        const title = this.add.text(640, iy, `${sect.name} — ${sect.npcName}`, {
+            fontSize: '26px', fill: '#ffd700', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        elements.push(title);
+        iy += 40;
+
+        const isMember = p.sect === sectKey;
+
+        if (!p.sect) {
+            const canJoin = sectManager.canJoin(sectKey);
+            const joinText = canJoin
+                ? `善惡要求：${sect.karmaRequirement}（當前：${p.karma}） ✅`
+                : `善惡要求：${sect.karmaRequirement}（當前：${p.karma}） ❌`;
+            const infoText = this.add.text(640, iy, joinText, {
+                fontSize: '16px', fill: canJoin ? '#88ff88' : '#ff8888', fontFamily: 'serif'
+            }).setOrigin(0.5);
+            elements.push(infoText);
+            iy += 30;
+
+            const joinBtn = this.add.text(640, iy + 10, '[ 加入門派 ]', {
+                fontSize: '20px', fill: canJoin ? '#ffd700' : '#666', fontFamily: 'serif',
+                backgroundColor: '#333', padding: { x: 12, y: 6 }
+            }).setOrigin(0.5);
+            elements.push(joinBtn);
+
+            if (canJoin) {
+                joinBtn.setInteractive({ useHandCursor: true });
+                joinBtn.on('pointerdown', () => {
+                    const result = sectManager.joinSect(sectKey);
+                    if (result.ok) {
+                        this.closePanel(elements);
+                        this.updateHUD();
+                    }
+                });
+            }
+            iy += 50;
+        } else if (isMember) {
+            const repText = this.add.text(640, iy, `門派聲望：${p.sectReputation}`, {
+                fontSize: '18px', fill: '#fff', fontFamily: 'serif'
+            }).setOrigin(0.5);
+            elements.push(repText);
+            iy += 35;
+
+            const learnBtn = this.add.text(640, iy, '[ 學習武功 ]', {
+                fontSize: '20px', fill: '#ffd700', fontFamily: 'serif',
+                backgroundColor: '#333', padding: { x: 12, y: 6 }
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            elements.push(learnBtn);
+            learnBtn.on('pointerdown', () => {
+                this.closePanel(elements);
+                this.showArtLearningPanel(sectKey);
+            });
+            iy += 45;
+
+            const leaveBtn = this.add.text(640, iy, '[ 叛離門派 ]', {
+                fontSize: '18px', fill: '#ff6666', fontFamily: 'serif',
+                backgroundColor: '#333', padding: { x: 12, y: 6 }
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+            elements.push(leaveBtn);
+            leaveBtn.on('pointerdown', () => {
+                const result = sectManager.leaveSect();
+                if (result.ok) {
+                    this.closePanel(elements);
+                    this.updateHUD();
+                }
+            });
+            iy += 45;
+        } else {
+            const otherText = this.add.text(640, iy, `你已是 ${SECTS[p.sect]?.name || '其他'} 門人`, {
+                fontSize: '18px', fill: '#888', fontFamily: 'serif'
+            }).setOrigin(0.5);
+            elements.push(otherText);
+            iy += 40;
+        }
+
+        iy += 30;
+        const closeBtn = this.add.rectangle(640, iy + 20, 100, 36, 0x8b0000)
+            .setStrokeStyle(2, 0xff4444).setInteractive({ useHandCursor: true });
+        const closeLabel = this.add.text(640, iy + 20, '關閉', {
+            fontSize: '16px', fill: '#fff', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        elements.push(closeBtn, closeLabel);
+        closeBtn.on('pointerdown', () => this.closePanel(elements));
+    }
+
+    showArtLearningPanel(sectKey) {
+        const sect = SECTS[sectKey];
+        const learnable = sectManager.getLearnableArts(sectKey);
+        const p = dataManager.data.player;
+
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setInteractive();
+        const panel = this.add.rectangle(640, 360, 520, 480, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
+        const elements = [overlay, panel];
+
+        let iy = 100;
+        const title = this.add.text(640, iy, `學習武功 — ${sect.name}  學點：${p.studyPoints}`, {
+            fontSize: '22px', fill: '#ffd700', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        elements.push(title);
+        iy += 40;
+
+        if (learnable.length === 0) {
+            const empty = this.add.text(640, iy, '暫無可學武功（檢查門派聲望或學點）', {
+                fontSize: '16px', fill: '#888', fontFamily: 'serif'
+            }).setOrigin(0.5);
+            elements.push(empty);
+        } else {
+            learnable.forEach(art => {
+                const cost = SKILL_COSTS.studyPointsLearn[art.tier];
+                const tierLabel = { basic: '初階', mid: '中階', ultimate: '絕學' }[art.tier];
+                const row = this.add.text(640, iy, `${tierLabel} ${art.name}  [${cost} 學點]`, {
+                    fontSize: '16px', fill: '#fff', fontFamily: 'serif',
+                    backgroundColor: '#2a2a4a', padding: { x: 8, y: 4 }
+                }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+                row.on('pointerdown', () => {
+                    const result = sectManager.learnArt(sectKey, art.id);
+                    if (result.ok) {
+                        this.closePanel(elements);
+                    } else {
+                        row.setText(`${art.name} - ${result.reason}`);
+                        row.setColor('#ff6666');
+                    }
+                });
+                elements.push(row);
+                iy += 32;
+            });
+        }
+
+        iy += 30;
+        const closeBtn = this.add.rectangle(640, iy + 20, 100, 36, 0x8b0000)
+            .setStrokeStyle(2, 0xff4444).setInteractive({ useHandCursor: true });
+        const closeLabel = this.add.text(640, iy + 20, '關閉', {
+            fontSize: '16px', fill: '#fff', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        elements.push(closeBtn, closeLabel);
+        closeBtn.on('pointerdown', () => this.closePanel(elements));
     }
 
     showLifeSkillMenu(skillId, panel, overlay) {
