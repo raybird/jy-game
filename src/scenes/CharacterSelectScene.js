@@ -1,103 +1,178 @@
 import Phaser from 'phaser';
-import { CHARACTERS, CHARACTER_SKILLS, ATTRIBUTE_CONFIG } from '../data/GameData.js';
+import { INITIAL_PLAYER, FIVE_ATTRS, CHARACTERS, CHARACTER_SKILLS } from '../data/GameData.js';
 import { dataManager } from '../systems/DataManager.js';
 import { saveSystem } from '../systems/SaveSystem.js';
 
 export default class CharacterSelectScene extends Phaser.Scene {
     constructor() {
         super({ key: 'CharacterSelectScene' });
-        this.inputText = '';
     }
 
     create() {
-        const cx = 640, cy = 360;
+        this.cameras.main.setBackgroundColor('#1a1a2e');
+        this.remainingPoints = 50;
+        this.attrs = { str: 10, bra: 10, wis: 10, luk: 10, con: 10 };
+        this.playerName = '少俠';
 
-        this.add.text(cx, 80, '選擇角色', {
-            fontSize: '48px', color: '#c9a227', fontFamily: 'Microsoft JhengHei'
+        const cx = 400;
+        let iy = 40;
+
+        this.add.text(cx, iy, '創建角色', {
+            fontSize: '32px', fill: '#ffd700', fontFamily: 'serif'
         }).setOrigin(0.5);
+        iy += 60;
 
-        const chars = Object.entries(CHARACTERS);
-        const startX = 140;
-        const spacing = 220;
+        this.add.text(cx - 150, iy, '角色名稱：', {
+            fontSize: '20px', fill: '#fff', fontFamily: 'serif'
+        });
+        this.nameText = this.add.text(cx + 20, iy, this.playerName, {
+            fontSize: '20px', fill: '#00ff88', fontFamily: 'serif'
+        }).setOrigin(0, 0.5);
+        iy += 40;
 
-        const charButtons = [];
-        chars.forEach(([id, char], i) => {
-            const x = startX + i * spacing;
-            const btn = this.add.rectangle(x, cy - 30, 180, 240, 0x2a2a4a, 1)
-                .setStrokeStyle(2, 0xc9a227)
-                .setInteractive({ useHandCursor: true });
+        this.pointsText = this.add.text(cx, iy, `剩餘點數：${this.remainingPoints}`, {
+            fontSize: '22px', fill: '#ffd700', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        iy += 50;
 
-            this.add.text(x, cy - 120, char.name, {
-                fontSize: '28px', color: '#c9a227', fontFamily: 'Microsoft JhengHei'
+        this.attrTexts = {};
+        const keys = ['str', 'bra', 'wis', 'luk', 'con'];
+
+        keys.forEach(key => {
+            const cfg = FIVE_ATTRS[key];
+            this.add.text(cx - 200, iy, `${cfg.label} (${cfg.short})`, {
+                fontSize: '18px', fill: '#aaa', fontFamily: 'serif'
+            }).setOrigin(0, 0.5);
+
+            const minusBtn = this.add.text(cx + 50, iy, '◀', {
+                fontSize: '22px', fill: '#ff6666', fontFamily: 'serif'
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+            const valText = this.add.text(cx + 90, iy, `${this.attrs[key]}`, {
+                fontSize: '22px', fill: '#fff', fontFamily: 'serif'
             }).setOrigin(0.5);
 
-            this.add.text(x, cy + 30, char.desc, {
-                fontSize: '16px', color: '#aaaaaa', fontFamily: 'Microsoft JhengHei',
-                align: 'center', wordWrap: { width: 160 }
-            }).setOrigin(0.5);
+            const plusBtn = this.add.text(cx + 130, iy, '▶', {
+                fontSize: '22px', fill: '#66ff66', fontFamily: 'serif'
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-            const charAttr = ATTRIBUTE_CONFIG.characterAttribute[id];
-            if (charAttr) {
-                this.add.text(x, cy + 54, ATTRIBUTE_CONFIG.icons[charAttr] + ' ' + ATTRIBUTE_CONFIG.names[charAttr], {
-                    fontSize: '14px', color: '#ffcc00', fontFamily: 'Microsoft JhengHei',
-                    align: 'center'
-                }).setOrigin(0.5);
-            }
+            this.attrTexts[key] = valText;
 
-            const skills = CHARACTER_SKILLS[id];
-            if (skills) {
-                const skillText = skills.map((s, idx) => (idx + 1) + '.' + s.name).join('  ');
-                this.add.text(x, cy + 70, skillText, {
-                    fontSize: '11px', color: '#88aacc', fontFamily: 'Microsoft JhengHei',
-                    align: 'center'
-                }).setOrigin(0.5);
-            }
+            minusBtn.on('pointerdown', () => {
+                if (this.attrs[key] > 5) {
+                    this.attrs[key] -= 1;
+                    this.remainingPoints += 1;
+                    this.updateDisplay();
+                }
+            });
+            plusBtn.on('pointerdown', () => {
+                if (this.attrs[key] < 15 && this.remainingPoints > 0) {
+                    this.attrs[key] += 1;
+                    this.remainingPoints -= 1;
+                    this.updateDisplay();
+                }
+            });
 
-            charButtons.push({ btn, id });
+            iy += 40;
         });
 
-        this.add.text(640, 480, '名字（可選）：', {
-            fontSize: '24px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
+        iy += 20;
+
+        this.add.text(cx, iy, `[ 屬性說明 ]`, {
+            fontSize: '18px', fill: '#aaa', fontFamily: 'serif'
         }).setOrigin(0.5);
+        iy += 25;
 
-        const inputBg = this.add.rectangle(640, 520, 200, 40, 0x1a1a2e)
-            .setStrokeStyle(2, 0xc9a227);
+        const descKeys = [
+            '臂力：影響物理攻擊力',
+            '膽識：影響暴擊率',
+            '悟性：影響學點消耗折扣',
+            '福緣：影響稀有掉落率',
+            '定力：影響防禦與狀態抗性',
+        ];
+        descKeys.forEach(desc => {
+            this.add.text(cx, iy, desc, {
+                fontSize: '14px', fill: '#666', fontFamily: 'serif'
+            }).setOrigin(0.5);
+            iy += 22;
+        });
 
-        this.nameText = this.add.text(640, 520, '', {
-            fontSize: '20px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
-        }).setOrigin(0.5);
+        iy += 10;
 
-        const confirmBtn = this.add.text(cx, 600, '確認開始遊戲', {
-            fontSize: '32px', color: '#c9a227', fontFamily: 'Microsoft JhengHei'
+        const confirmBtn = this.add.text(cx, iy, '[ 踏入江湖 ]', {
+            fontSize: '24px', fill: '#ffd700', fontFamily: 'serif',
+            backgroundColor: '#444', padding: { x: 20, y: 10 }
         }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-        let selectedCharId = 'guojing';
-
-        charButtons.forEach(({ btn, id }) => {
-            btn.on('pointerdown', () => {
-                selectedCharId = id;
-                charButtons.forEach(b => b.btn.setStrokeStyle(2, 0xc9a227));
-                btn.setStrokeStyle(3, 0xff0000);
-            });
+        confirmBtn.on('pointerover', () => {
+            confirmBtn.setFill('#00ff88');
+        });
+        confirmBtn.on('pointerout', () => {
+            confirmBtn.setFill('#ffd700');
         });
 
-        confirmBtn.on('pointerover', () => confirmBtn.setColor('#ffffff'));
-        confirmBtn.on('pointerout', () => confirmBtn.setColor('#c9a227'));
         confirmBtn.on('pointerdown', () => {
-            const name = this.inputText || CHARACTERS[selectedCharId].name;
-            dataManager.data.player.name = name;
-            dataManager.setCharacter(selectedCharId, CHARACTERS[selectedCharId]);
+            const p = dataManager.data.player;
+
+            p.name = this.playerName;
+            p.attributes = { ...this.attrs };
+            p.attributePoints = this.remainingPoints;
+            p.hp = 100;
+            p.maxHp = 100;
+            p.mp = 50;
+            p.maxMp = 50;
+            p.combatExp = 0;
+            p.studyPoints = 0;
+            p.fame = 0;
+            p.karma = 0;
+            p.sect = null;
+            p.sectReputation = 0;
+            p.martialArts = [];
+            p.equippedSkills = [null, null, null, null];
+            p.equipped = { weapon: null, armor: null, accessory: null };
+            p.silver = 1000;
+            p.level = 1;
+
+            p.characterId = 'guojing';
+            p.strength = this.attrs.str;
+            p.agility = this.attrs.bra;
+            p.innerPower = this.attrs.wis;
+            p.constitution = this.attrs.con;
+
+            p.skills = [0, 0, 0, 0];
+            p.skillExp = [0, 0, 0, 0];
+            p.skillTree = [
+                { nodes: [false, false, false] },
+                { nodes: [false, false, false] },
+                { nodes: [false, false, false] },
+                { nodes: [false, false, false] },
+            ];
+            p.exp = 0;
+            p.skillPoints = 3;
+            p.achievements = {};
+            p.battleCount = 0;
+            p.killCount = 0;
+            p.titles = [];
+
             saveSystem.save();
             this.scene.start('WorldScene', { map: 'xianyang' });
         });
 
         this.input.keyboard.on('keydown', (event) => {
             if (event.key === 'Backspace') {
-                this.inputText = this.inputText.slice(0, -1);
+                this.inputText = (this.inputText || this.playerName).slice(0, -1);
             } else if (event.key.length === 1) {
-                this.inputText += event.key;
+                this.inputText = (this.inputText || '') + event.key;
             }
-            this.nameText.setText(this.inputText);
+            this.playerName = this.inputText || '少俠';
+            this.nameText.setText(this.playerName);
+        });
+    }
+
+    updateDisplay() {
+        this.pointsText.setText(`剩餘點數：${this.remainingPoints}`);
+        Object.entries(this.attrTexts).forEach(([key, text]) => {
+            text.setText(`${this.attrs[key]}`);
         });
     }
 }
