@@ -38,6 +38,10 @@ export default class WorldScene extends Phaser.Scene {
             this.scene.pause();
             this.scene.launch('SkillTreeScene');
         });
+        this.input.keyboard.on('keydown-C', () => {
+            this.scene.pause();
+            this.scene.launch('PlayerInfoScene');
+        });
         this.updateHUD();
     }
 

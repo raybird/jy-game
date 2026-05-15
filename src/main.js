@@ -5,6 +5,7 @@ import CharacterSelectScene from './scenes/CharacterSelectScene.js';
 import WorldScene from './scenes/WorldScene.js';
 import BattleScene from './scenes/BattleScene.js';
 import SkillTreeScene from './scenes/SkillTreeScene.js';
+import { PlayerInfoScene } from './scenes/PlayerInfoScene.js';
 import { soundManager } from './systems/SoundManager.js';
 
 const config = {
@@ -13,7 +14,7 @@ const config = {
     height: 720,
     parent: 'game-container',
     backgroundColor: '#1a1a2e',
-    scene: [BootScene, MenuScene, CharacterSelectScene, WorldScene, BattleScene, SkillTreeScene],
+    scene: [BootScene, MenuScene, CharacterSelectScene, WorldScene, BattleScene, SkillTreeScene, PlayerInfoScene],
     physics: {
         default: 'arcade',
         arcade: {
