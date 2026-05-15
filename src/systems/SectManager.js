@@ -116,6 +116,9 @@ class SectManager {
             const art = sect.martialArts.find(m => m.id === artId);
             if (art) return { ...art, sectKey: key, sectName: sect.name };
         }
+        const p = dataManager.data.player;
+        const entry = p.martialArts.find(a => a.id === artId);
+        if (entry && entry.ratio) return entry;
         return null;
     }
 }

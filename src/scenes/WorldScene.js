@@ -4,6 +4,7 @@ import { saveSystem } from '../systems/SaveSystem.js';
 import { CHARACTERS, CHARACTER_SKILLS, ENCOUNTER_CONFIG, ITEMS, SECTS, SKILL_COSTS } from '../data/GameData.js';
 import { sectManager } from '../systems/SectManager.js';
 import { questManager } from '../systems/QuestManager.js';
+import { chatSystem } from '../systems/ChatSystem.js';
 
 export default class WorldScene extends Phaser.Scene {
     constructor() {
@@ -29,6 +30,7 @@ export default class WorldScene extends Phaser.Scene {
         this.setupNPCs();
         this.setupQuestNPCs();
         this.setupSectNPCs();
+        this.setupFusionNPC();
         this.setupExits();
 
         this.cursors = this.input.keyboard.createCursorKeys();
@@ -40,6 +42,7 @@ export default class WorldScene extends Phaser.Scene {
         });
 
         this.encounterTimer = 0;
+        this.setupChatUI();
         this.input.keyboard.on('keydown-V', () => {
             this.scene.pause();
             this.scene.launch('SkillTreeScene');
@@ -421,6 +424,40 @@ export default class WorldScene extends Phaser.Scene {
         });
     }
 
+    setupFusionNPC() {
+        const x = 150, y = 600;
+        const container = this.add.container(x, y);
+        const shadow = this.add.ellipse(0, 35, 50, 20, 0x000000, 0.3);
+        const body = this.add.rectangle(0, 10, 40, 50, 0x9370db);
+        const head = this.add.circle(0, -20, 18, 0xffdbac);
+        const label = this.add.text(0, -55, '隱士高人', {
+            fontSize: '14px', color: '#9370db', fontFamily: 'serif', stroke: '#000', strokeThickness: 2
+        }).setOrigin(0.5);
+        const icon = this.add.text(0, 10, '🧙', { fontSize: '24px' }).setOrigin(0.5);
+        const interactHint = this.add.text(0, 60, '點擊互動', {
+            fontSize: '12px', color: '#c9a227', fontFamily: 'serif'
+        }).setOrigin(0.5).setAlpha(0);
+
+        container.add([shadow, body, head, icon, label, interactHint]);
+
+        const hitbox = this.add.rectangle(x, y, 60, 80, 0xffffff, 0)
+            .setInteractive({ useHandCursor: true });
+        hitbox.setData('container', container);
+        hitbox.setData('hint', interactHint);
+        hitbox.on('pointerover', () => {
+            this.tweens.add({ targets: interactHint, alpha: 1, duration: 200 });
+            container.setScale(1.05);
+        });
+        hitbox.on('pointerout', () => {
+            this.tweens.add({ targets: interactHint, alpha: 0, duration: 200 });
+            container.setScale(1);
+        });
+        hitbox.on('pointerdown', () => {
+            this.scene.pause();
+            this.scene.launch('FusionScene');
+        });
+    }
+
     setupQuestNPCs() {
         if (this.currentMap !== 'xianyang') return;
 
@@ -775,7 +812,7 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     update(time, delta) {
-        if (!this.player) return;
+        if (!this.player || this.chatActive) return;
 
         const container = this.player.getData('container');
         const speed = 160;
@@ -839,5 +876,80 @@ export default class WorldScene extends Phaser.Scene {
         this.time.delayedCall(300, () => {
             this.scene.start('BattleScene', { enemyId });
         });
+    }
+
+    setupChatUI() {
+        this.chatActive = false;
+        this.chatMessages = [];
+        this.chatChannel = 'all';
+
+        this.chatBg = this.add.rectangle(0, 520, 300, 180, 0x000000, 0.5).setOrigin(0, 0).setStrokeStyle(1, 0x444444).setDepth(20);
+        this.chatText = this.add.text(5, 525, '', {
+            fontSize: '12px', fill: '#aaa', fontFamily: 'serif', lineSpacing: 2, wordWrap: { width: 290 }
+        }).setDepth(20);
+
+        this.inputText = '';
+        this.chatInputBox = this.add.rectangle(5, 700, 290, 20, 0x222222, 0.9).setOrigin(0, 0).setStrokeStyle(1, 0x666666).setDepth(20).setVisible(false);
+        this.chatInputText = this.add.text(8, 702, '', {
+            fontSize: '13px', fill: '#fff', fontFamily: 'serif'
+        }).setDepth(20).setVisible(false);
+
+        this.chatChannelText = this.add.text(5, 500, '頻道: /綜合 /區域 /門派  |  Enter 聊天', {
+            fontSize: '11px', fill: '#666', fontFamily: 'serif'
+        }).setDepth(20);
+
+        this.input.keyboard.on('keydown-ENTER', () => {
+            if (!this.chatActive) {
+                this.chatActive = true;
+                this.chatInputBox.setVisible(true);
+                this.chatInputText.setVisible(true);
+                this.inputText = '';
+            } else {
+                if (this.inputText.startsWith('/')) {
+                    const parts = this.inputText.slice(1).split(' ');
+                    const cmd = parts[0];
+                    if (cmd === '綜合') this.chatChannel = 'all';
+                    else if (cmd === '區域') this.chatChannel = 'area';
+                    else if (cmd === '門派') this.chatChannel = 'sect';
+                    else this.chatChannel = 'all';
+                } else if (this.inputText.trim()) {
+                    this.addChatMessage(this.inputText);
+                }
+                this.chatActive = false;
+                this.chatInputBox.setVisible(false);
+                this.chatInputText.setVisible(false);
+                this.inputText = '';
+                this.chatInputText.setText('');
+            }
+        });
+
+        this.input.keyboard.on('keydown-ESC', () => {
+            if (this.chatActive) {
+                this.chatActive = false;
+                this.chatInputBox.setVisible(false);
+                this.chatInputText.setVisible(false);
+                this.inputText = '';
+                this.chatInputText.setText('');
+            }
+        });
+
+        this.input.keyboard.on('keydown', (event) => {
+            if (!this.chatActive) return;
+            if (event.key === 'Backspace') {
+                this.inputText = this.inputText.slice(0, -1);
+            } else if (event.key === 'Enter' || event.key === 'Escape') {
+                return;
+            } else if (event.key.length === 1) {
+                this.inputText += event.key;
+            }
+            this.chatInputText.setText('> ' + this.inputText.slice(-38));
+        });
+    }
+
+    addChatMessage(text) {
+        this.chatMessages.push({ text, time: Date.now() });
+        if (this.chatMessages.length > 20) this.chatMessages.shift();
+        const lines = this.chatMessages.map(m => m.text).join('\n');
+        this.chatText.setText(lines);
     }
 }
