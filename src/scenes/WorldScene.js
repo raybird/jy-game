@@ -212,7 +212,7 @@ export default class WorldScene extends Phaser.Scene {
         const hudBg = this.add.rectangle(640, 700, 300, 80, 0x000000, 0.7).setStrokeStyle(2, 0xc9a227);
 
         this.hpBarBg = this.add.rectangle(100, 680, 160, 24, 0x333333).setStrokeStyle(1, 0x666666);
-        this.hpBar = this.add.rectangle(100, 680, 156, 20, 0xff0000).setOrigin(0, 0.5);
+        this.hpBar = this.add.rectangle(22, 680, 156, 20, 0xff0000).setOrigin(0, 0.5);
         this.add.text(100, 656, 'HP', { fontSize: '14px', color: '#ffffff', fontFamily: 'Arial' }).setOrigin(0, 0.5);
 
         this.hpText = this.add.text(100, 680, `${p.hp}/${p.maxHp}`, {
@@ -220,7 +220,7 @@ export default class WorldScene extends Phaser.Scene {
         }).setOrigin(0.5);
 
         this.mpBarBg = this.add.rectangle(100, 718, 160, 20, 0x333333).setStrokeStyle(1, 0x666666);
-        this.mpBar = this.add.rectangle(100, 718, 156, 16, 0x0000ff).setOrigin(0, 0.5);
+        this.mpBar = this.add.rectangle(22, 718, 156, 16, 0x0000ff).setOrigin(0, 0.5);
         this.add.text(100, 700, 'MP', { fontSize: '12px', color: '#ffffff', fontFamily: 'Arial' }).setOrigin(0, 0.5);
 
         this.silverText = this.add.text(280, 655, '💰 ' + p.silver, {

@@ -179,7 +179,7 @@ export default class BattleScene extends Phaser.Scene {
 
         this.playerContainer.add([shadow, body, head, hair, eyeL, eyeR, weapon, weaponHandle]);
 
-        this.createHPBar(this.playerContainer.x - 60, -60, this.playerMaxHp, this.playerHp, 'player');
+        this.createHPBar(this.playerContainer.x - 60, 310, this.playerMaxHp, this.playerHp, 'player');
         this.add.text(250, 290, charData.name, {
             fontSize: '22px', color: '#ffffff', fontFamily: 'Microsoft JhengHei'
         }).setOrigin(0.5);
@@ -214,7 +214,7 @@ export default class BattleScene extends Phaser.Scene {
 
         this.enemyContainer.add([shadow, body, head, cloth, eyeL, eyeR]);
 
-        this.createHPBar(this.enemyContainer.x - 70, -80, this.enemyMaxHp, this.enemyHp, 'enemy');
+        this.createHPBar(this.enemyContainer.x - 70, 270, this.enemyMaxHp, this.enemyHp, 'enemy');
         this.add.text(950, 250, namePrefix + enemyData.name, {
             fontSize: '24px', color: '#ff4444', fontFamily: 'Microsoft JhengHei',
             stroke: '#000000', strokeThickness: 2
@@ -222,8 +222,9 @@ export default class BattleScene extends Phaser.Scene {
     }
 
     createHPBar(x, y, maxHp, currentHp, id) {
-        const barBg = this.add.rectangle(x, y, 140, 20, 0x333333).setStrokeStyle(2, 0x666666);
-        const bar = this.add.rectangle(x, y, 136, 16, id === 'player' ? 0x00ff00 : 0xff0000).setOrigin(0, 0.5);
+        const barW = 140, barH = 20, pad = 2;
+        const barBg = this.add.rectangle(x, y, barW, barH, 0x333333).setStrokeStyle(2, 0x666666);
+        const bar = this.add.rectangle(x - barW / 2 + pad, y, barW - pad * 2, barH - pad * 2, id === 'player' ? 0x00ff00 : 0xff0000).setOrigin(0, 0.5);
         const text = this.add.text(x, y, `${currentHp}/${maxHp}`, {
             fontSize: '12px', color: '#ffffff', fontFamily: 'Arial'
         }).setOrigin(0.5);
