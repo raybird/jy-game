@@ -90,6 +90,29 @@ export class PlayerInfoScene extends Phaser.Scene {
 
         iy += 10;
 
+        this.add.text(cx, iy, '--- 裝備武功 ---', {
+            fontSize: '20px', fill: '#ffd700', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        iy += 28;
+
+        const equippedSkills = p.equippedSkills || [];
+        for (let slot = 0; slot < 4; slot++) {
+            const artId = equippedSkills[slot];
+            let label;
+            if (artId) {
+                const artDef = sectManager.getArtDefinition(artId);
+                label = artDef ? artDef.name : artId;
+            } else {
+                label = '空';
+            }
+            this.add.text(cx, iy, `招式${slot + 1}：${label}`, {
+                fontSize: '16px', fill: artId ? '#00ffcc' : '#666', fontFamily: 'serif'
+            }).setOrigin(0.5);
+            iy += 26;
+        }
+
+        iy += 10;
+
         this.add.text(cx, iy, '--- 五圍屬性 ---', {
             fontSize: '20px', fill: '#ffd700', fontFamily: 'serif'
         }).setOrigin(0.5);

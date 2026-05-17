@@ -365,7 +365,7 @@ export default class BattleScene extends Phaser.Scene {
 
         this.log(`✨ 使用 ${skill.name}！`);
         soundManager.play('skill');
-        this.skillAnimation(index);
+        this.skillAnimation(index, skill);
         this.time.delayedCall(400, () => {
             const damage = this.calculateSkillDamage(skill, skillLevel, index);
             this.dealDamageToEnemy(damage, skill);
@@ -407,10 +407,9 @@ export default class BattleScene extends Phaser.Scene {
         }
 
         if (skillIndex !== null && skillIndex !== undefined) {
-            const charId = dataManager.data.player.characterId;
-            const skillAttr = ATTRIBUTE_CONFIG.skillAttributes[charId];
-            if (skillAttr && skillAttr[skillIndex]) {
-                const attrBonus = this.getAttributeBonus(skillAttr[skillIndex], this.enemyId);
+            const skillAttr = this.getSkillAttribute(skill);
+            if (skillAttr) {
+                const attrBonus = this.getAttributeBonus(skillAttr, this.enemyId);
                 damage = Math.floor(damage * attrBonus);
             }
         }
@@ -438,6 +437,13 @@ export default class BattleScene extends Phaser.Scene {
             return (2 - ATTRIBUTE_CONFIG.damageMultiplier);
         }
         return 1.0;
+    }
+
+    getSkillAttribute(skill) {
+        if (!skill || !skill.name) return null;
+        const hash = skill.name.split('').reduce((s, c) => s + c.charCodeAt(0), 0);
+        const attrs = ['yanggang', 'yinrou', 'gangmeng', 'qingling'];
+        return attrs[hash % 4];
     }
 
     addRage(amount) {
@@ -511,7 +517,7 @@ export default class BattleScene extends Phaser.Scene {
         this.createSlashEffect(this.playerContainer.x + 80, this.playerContainer.y);
     }
 
-    skillAnimation(index) {
+    skillAnimation(index, skill) {
         const charId = dataManager.data.player.characterId;
 
         const animations = {
@@ -547,6 +553,9 @@ export default class BattleScene extends Phaser.Scene {
             ]
         };
 
+        const CHARACTER_IDS = ['guojing', 'yangguo', 'xiaolongnu', 'zhangwuji', 'linghu'];
+        const isSectArt = skill && !CHARACTER_IDS.includes(skill.id || '');
+
         this.tweens.add({
             targets: this.playerContainer,
             x: this.playerContainer.x + 80,
@@ -554,6 +563,11 @@ export default class BattleScene extends Phaser.Scene {
             yoyo: true,
             ease: 'Power2'
         });
+
+        if (isSectArt) {
+            this.genericSkillByType(skill);
+            return;
+        }
 
         const charAnim = animations[charId];
         if (charAnim && charAnim[index]) {
@@ -566,6 +580,17 @@ export default class BattleScene extends Phaser.Scene {
     genericSkillAnimation(index) {
         const colors = [0xffffff, 0x4169e1, 0x9400d3, 0xffd700];
         this.launchOrbs(this.playerContainer.x + 80, this.playerContainer.y, colors[index]);
+    }
+
+    genericSkillByType(skill) {
+        if (!skill) return;
+        if (skill.aoe) {
+            this.launchOrbs(this.playerContainer.x + 80, this.playerContainer.y, 0xff6600, 6);
+        } else if (skill.type === 'inner') {
+            this.launchOrbs(this.playerContainer.x + 80, this.playerContainer.y, 0x4488ff, 5);
+        } else {
+            this.createSlashEffect(this.playerContainer.x + 120, this.playerContainer.y, 0xffd700);
+        }
     }
 
     animGuojingPalm() {

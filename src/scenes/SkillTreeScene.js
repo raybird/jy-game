@@ -51,8 +51,11 @@ export default class SkillTreeScene extends Phaser.Scene {
                             row.setText(`Lv.${result.newLevel} ${artDef.name} [${artDef.tier === 'basic' ? '初' : artDef.tier === 'mid' ? '中' : '絕'}]`);
                         } else {
                             row.setColor('#ff6666');
+                            const reason = result.reason || '無法升級';
+                            row.setText(`Lv.${entry.level} ${artDef.name} — ${reason}`);
                             this.time.delayedCall(2000, () => {
                                 row.setColor('#fff');
+                                row.setText(`Lv.${entry.level} ${artDef.name} [${artDef.tier === 'basic' ? '初' : artDef.tier === 'mid' ? '中' : '絕'}]`);
                             });
                         }
                     }
