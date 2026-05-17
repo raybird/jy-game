@@ -5,6 +5,7 @@ import { soundManager } from '../systems/SoundManager.js';
 import { CHARACTERS, ENEMIES, CHARACTER_SKILLS, SKILL_TREE_CONFIG, ATTRIBUTE_CONFIG, RAGE_CONFIG, ULTIMATE_SKILLS, ATB_SPEEDS_CONFIG, ITEMS, ENEMY_TIERS, rollEnemyTier, LOOT_TABLES } from '../data/GameData.js';
 import { sectManager } from '../systems/SectManager.js';
 import { questManager } from '../systems/QuestManager.js';
+import { spriteManager } from '../systems/SpriteManager.js';
 
 export default class BattleScene extends Phaser.Scene {
     constructor() {
@@ -157,27 +158,13 @@ export default class BattleScene extends Phaser.Scene {
         this.playerMp = dataManager.data.player.mp;
         this.playerMaxMp = dataManager.data.player.maxMp;
 
-        const colors = {
-            guojing: { main: 0x4169e1, secondary: 0x1e3a8a },
-            yangguo: { main: 0xdc143c, secondary: 0x8b0000 },
-            xiaolongnu: { main: 0xffd700, secondary: 0xffa500 },
-            zhangwuji: { main: 0x9400d3, secondary: 0x4b0082 },
-            linghu: { main: 0x228b22, secondary: 0x006400 }
-        };
-        const playerColors = colors[charId] || colors.guojing;
-
         this.playerContainer = this.add.container(250, 380);
 
-        const shadow = this.add.ellipse(0, 55, 70, 25, 0x000000, 0.4);
-        const body = this.add.rectangle(0, 20, 50, 60, playerColors.main);
-        const head = this.add.circle(0, -25, 25, 0xffdbac);
-        const hair = this.add.arc(0, -32, 28, 180, 0, false, playerColors.secondary);
-        const eyeL = this.add.circle(-8, -25, 4, 0x000000);
-        const eyeR = this.add.circle(8, -25, 4, 0x000000);
-        const weapon = this.add.rectangle(35, 15, 12, 55, 0xc0c0c0);
-        const weaponHandle = this.add.rectangle(35, 40, 16, 12, 0x8b4513);
+        const sprite = spriteManager.createPlayerAnimated(this, charId, 0, 0);
+        sprite.setScale(2.5);
+        const shadow = this.add.ellipse(0, 45, 70, 25, 0x000000, 0.4);
 
-        this.playerContainer.add([shadow, body, head, hair, eyeL, eyeR, weapon, weaponHandle]);
+        this.playerContainer.add([shadow, sprite]);
 
         this.createHPBar(this.playerContainer.x - 60, 310, this.playerMaxHp, this.playerHp, 'player');
         this.add.text(250, 290, charData.name, {
@@ -196,23 +183,10 @@ export default class BattleScene extends Phaser.Scene {
 
         this.enemyContainer = this.add.container(950, 320);
 
-        const shadow = this.add.ellipse(0, 65, 80, 30, 0x000000, 0.4);
+        const shadow = this.add.ellipse(0, 45, 80, 30, 0x000000, 0.4);
+        const sprite = spriteManager.createEnemyAnimated(this, this.enemyId, 0, 0);
 
-        const enemyColors = {
-            quanzhen_disciple: { main: 0x4169e1, secondary: 0x2a4a8a },
-            taoist: { main: 0xffffff, secondary: 0xcccccc },
-            mingjiao_member: { main: 0xdc143c, secondary: 0x8b0000 },
-            persian: { main: 0x9400d3, secondary: 0x4b0082 }
-        };
-        const colors = enemyColors[this.enemyId] || { main: 0x8b4513, secondary: 0x5c3317 };
-
-        const body = this.add.rectangle(0, 25, 60, 70, colors.main);
-        const head = this.add.circle(0, -30, 30, 0xffdbac);
-        const cloth = this.add.rectangle(0, 40, 70, 40, colors.secondary);
-        const eyeL = this.add.circle(-10, -30, 5, 0x000000);
-        const eyeR = this.add.circle(10, -30, 5, 0x000000);
-
-        this.enemyContainer.add([shadow, body, head, cloth, eyeL, eyeR]);
+        this.enemyContainer.add([shadow, sprite]);
 
         this.createHPBar(this.enemyContainer.x - 70, 270, this.enemyMaxHp, this.enemyHp, 'enemy');
         this.add.text(950, 250, namePrefix + enemyData.name, {

@@ -1,0 +1,360 @@
+{
+  "target": "asset",
+  "mode": "idle",
+  "prompt": "",
+  "role": "",
+  "input": "assets/sprites/mingjiao-master/mingjiao-master-raw-source.png",
+  "threshold": 100,
+  "edge_threshold": 150,
+  "duration": 200,
+  "rows": 3,
+  "cols": 3,
+  "cell_size": 128,
+  "fit_scale": 0.72,
+  "trim_border": 4,
+  "edge_clean_depth": 3,
+  "align": "feet",
+  "shared_scale": true,
+  "component_mode": "largest",
+  "component_padding": 2,
+  "min_component_area": 24,
+  "edge_touch_margin": 1,
+  "frame_labels": [
+    "mingjiao-master-1",
+    "mingjiao-master-2",
+    "mingjiao-master-3",
+    "mingjiao-master-4",
+    "mingjiao-master-5",
+    "mingjiao-master-6",
+    "mingjiao-master-7",
+    "mingjiao-master-8",
+    "mingjiao-master-9"
+  ],
+  "frames": [
+    {
+      "grid": [
+        0,
+        0
+      ],
+      "source_box": [
+        0,
+        0,
+        418,
+        418
+      ],
+      "component_mode": "largest",
+      "component_count": 2,
+      "selected_component_area": 40340,
+      "selected_component_bbox": [
+        125,
+        46,
+        299,
+        374
+      ],
+      "crop_bbox": [
+        123,
+        44,
+        301,
+        376
+      ],
+      "edge_touch": false,
+      "output_size": [
+        48,
+        91
+      ],
+      "paste_position": [
+        40,
+        20
+      ]
+    },
+    {
+      "grid": [
+        0,
+        1
+      ],
+      "source_box": [
+        418,
+        0,
+        836,
+        418
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 40275,
+      "selected_component_bbox": [
+        113,
+        44,
+        288,
+        375
+      ],
+      "crop_bbox": [
+        111,
+        42,
+        290,
+        377
+      ],
+      "edge_touch": false,
+      "output_size": [
+        49,
+        92
+      ],
+      "paste_position": [
+        39,
+        19
+      ]
+    },
+    {
+      "grid": [
+        0,
+        2
+      ],
+      "source_box": [
+        836,
+        0,
+        1254,
+        418
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 40085,
+      "selected_component_bbox": [
+        93,
+        46,
+        272,
+        374
+      ],
+      "crop_bbox": [
+        91,
+        44,
+        274,
+        376
+      ],
+      "edge_touch": false,
+      "output_size": [
+        50,
+        91
+      ],
+      "paste_position": [
+        39,
+        20
+      ]
+    },
+    {
+      "grid": [
+        1,
+        0
+      ],
+      "source_box": [
+        0,
+        418,
+        418,
+        836
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 40352,
+      "selected_component_bbox": [
+        123,
+        38,
+        302,
+        366
+      ],
+      "crop_bbox": [
+        121,
+        36,
+        304,
+        368
+      ],
+      "edge_touch": false,
+      "output_size": [
+        50,
+        91
+      ],
+      "paste_position": [
+        39,
+        20
+      ]
+    },
+    {
+      "grid": [
+        1,
+        1
+      ],
+      "source_box": [
+        418,
+        418,
+        836,
+        836
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 40596,
+      "selected_component_bbox": [
+        114,
+        37,
+        295,
+        366
+      ],
+      "crop_bbox": [
+        112,
+        35,
+        297,
+        368
+      ],
+      "edge_touch": false,
+      "output_size": [
+        50,
+        91
+      ],
+      "paste_position": [
+        39,
+        20
+      ]
+    },
+    {
+      "grid": [
+        1,
+        2
+      ],
+      "source_box": [
+        836,
+        418,
+        1254,
+        836
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 40274,
+      "selected_component_bbox": [
+        96,
+        38,
+        274,
+        366
+      ],
+      "crop_bbox": [
+        94,
+        36,
+        276,
+        368
+      ],
+      "edge_touch": false,
+      "output_size": [
+        50,
+        91
+      ],
+      "paste_position": [
+        39,
+        20
+      ]
+    },
+    {
+      "grid": [
+        2,
+        0
+      ],
+      "source_box": [
+        0,
+        836,
+        418,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 2,
+      "selected_component_area": 39915,
+      "selected_component_bbox": [
+        123,
+        30,
+        300,
+        358
+      ],
+      "crop_bbox": [
+        121,
+        28,
+        302,
+        360
+      ],
+      "edge_touch": false,
+      "output_size": [
+        49,
+        91
+      ],
+      "paste_position": [
+        39,
+        20
+      ]
+    },
+    {
+      "grid": [
+        2,
+        1
+      ],
+      "source_box": [
+        418,
+        836,
+        836,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 1,
+      "selected_component_area": 40653,
+      "selected_component_bbox": [
+        112,
+        30,
+        290,
+        358
+      ],
+      "crop_bbox": [
+        110,
+        28,
+        292,
+        360
+      ],
+      "edge_touch": false,
+      "output_size": [
+        50,
+        91
+      ],
+      "paste_position": [
+        39,
+        20
+      ]
+    },
+    {
+      "grid": [
+        2,
+        2
+      ],
+      "source_box": [
+        836,
+        836,
+        1254,
+        1254
+      ],
+      "component_mode": "largest",
+      "component_count": 2,
+      "selected_component_area": 40470,
+      "selected_component_bbox": [
+        93,
+        30,
+        274,
+        359
+      ],
+      "crop_bbox": [
+        91,
+        28,
+        276,
+        361
+      ],
+      "edge_touch": false,
+      "output_size": [
+        50,
+        91
+      ],
+      "paste_position": [
+        39,
+        20
+      ]
+    }
+  ],
+  "edge_touch_frames": []
+}

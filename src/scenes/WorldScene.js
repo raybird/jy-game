@@ -5,6 +5,7 @@ import { CHARACTERS, CHARACTER_SKILLS, ENCOUNTER_CONFIG, ITEMS, SECTS, SKILL_COS
 import { sectManager } from '../systems/SectManager.js';
 import { questManager } from '../systems/QuestManager.js';
 import { chatSystem } from '../systems/ChatSystem.js';
+import { spriteManager } from '../systems/SpriteManager.js';
 
 export default class WorldScene extends Phaser.Scene {
     constructor() {
@@ -162,38 +163,16 @@ export default class WorldScene extends Phaser.Scene {
 
     createPlayer() {
         const charId = dataManager.data.player.characterId;
-        const charData = CHARACTERS[charId];
 
-        const container = this.add.container(640, 500);
-
-        const shadow = this.add.ellipse(0, 25, 50, 20, 0x000000, 0.3);
-
-        const bodyColors = {
-            guojing: { main: 0x4169e1, secondary: 0x1e3a8a },
-            yangguo: { main: 0xdc143c, secondary: 0x8b0000 },
-            xiaolongnu: { main: 0xffd700, secondary: 0xffa500 },
-            zhangwuji: { main: 0x9400d3, secondary: 0x4b0082 },
-            linghu: { main: 0x228b22, secondary: 0x006400 }
-        };
-        const colors = bodyColors[charId] || bodyColors.guojing;
-
-        const body = this.add.rectangle(0, 0, 36, 44, colors.main);
-        const head = this.add.circle(0, -30, 18, 0xffdbac);
-        const hair = this.add.arc(0, -35, 20, 180, 0, false, colors.secondary);
-        const eyeL = this.add.circle(-6, -30, 3, 0x000000);
-        const eyeR = this.add.circle(6, -30, 3, 0x000000);
-
-        const weapon = this.add.rectangle(22, 0, 8, 40, 0xc0c0c0);
-        const weaponHandle = this.add.rectangle(22, 20, 12, 8, 0x8b4513);
-
-        container.add([shadow, body, head, hair, eyeL, eyeR, weapon, weaponHandle]);
-        container.setSize(50, 60);
+        const sprite = spriteManager.createPlayerWalkSprite(this, charId, 640, 500);
+        const shadow = this.add.ellipse(640, 525, 50, 20, 0x000000, 0.3);
 
         this.player = this.physics.add.sprite(640, 500, null);
         this.player.setCircle(25);
         this.player.setCollideWorldBounds(true);
         this.player.body.setSize(30, 30);
-        this.player.setData('container', container);
+        this.player.setData('shadow', shadow);
+        this.player.setData('sprite', sprite);
 
         this.tweens.add({
             targets: shadow,
@@ -391,35 +370,33 @@ export default class WorldScene extends Phaser.Scene {
         sects.forEach(([key, sect]) => {
             const x = sect.npcX || 640;
             const y = sect.npcY || 400;
-            const container = this.add.container(x, y);
 
-            const shadow = this.add.ellipse(0, 35, 50, 20, 0x000000, 0.3);
-            const body = this.add.rectangle(0, 10, 40, 50, 0xc9a227);
-            const head = this.add.circle(0, -20, 18, 0xffdbac);
-            const label = this.add.text(0, -55, sect.npcName + ' [' + sect.name + ']', {
+            const sprite = spriteManager.createNPCAnimated(this, key, x, y, 1.8);
+            const shadow = this.add.ellipse(x, y + 15, 50, 20, 0x000000, 0.3);
+            const label = this.add.text(x, y - 55, sect.npcName + ' [' + sect.name + ']', {
                 fontSize: '14px', color: '#ffd700', fontFamily: 'serif',
                 stroke: '#000', strokeThickness: 2
             }).setOrigin(0.5);
-            const icon = this.add.text(0, 10, '👤', { fontSize: '24px' }).setOrigin(0.5);
-            const interactHint = this.add.text(0, 60, '點擊互動', {
+            const interactHint = this.add.text(x, y + 55, '點擊互動', {
                 fontSize: '12px', color: '#c9a227', fontFamily: 'serif'
             }).setOrigin(0.5).setAlpha(0);
 
-            container.add([shadow, body, head, icon, label, interactHint]);
-
-            const hitbox = this.add.rectangle(x, y, 60, 80, 0xffffff, 0)
+            const hitbox = this.add.rectangle(x, y, 100, 120, 0xffffff, 0)
                 .setInteractive({ useHandCursor: true });
             hitbox.setData('npcId', 'sect_' + key);
-            hitbox.setData('container', container);
+            hitbox.setData('sprite', sprite);
             hitbox.setData('hint', interactHint);
+            hitbox.setData('shadow', shadow);
 
             hitbox.on('pointerover', () => {
                 this.tweens.add({ targets: interactHint, alpha: 1, duration: 200 });
-                container.setScale(1.05);
+                sprite.setScale(1.95);
+                hitbox.setStrokeStyle(2, 0xffd700, 0.3);
             });
             hitbox.on('pointerout', () => {
                 this.tweens.add({ targets: interactHint, alpha: 0, duration: 200 });
-                container.setScale(1);
+                sprite.setScale(1.8);
+                hitbox.setStrokeStyle(0, 0x000000, 0);
             });
             hitbox.on('pointerdown', () => this.interactWithSectNPC(key));
         });
@@ -427,31 +404,29 @@ export default class WorldScene extends Phaser.Scene {
 
     setupFusionNPC() {
         const x = 150, y = 600;
-        const container = this.add.container(x, y);
-        const shadow = this.add.ellipse(0, 35, 50, 20, 0x000000, 0.3);
-        const body = this.add.rectangle(0, 10, 40, 50, 0x9370db);
-        const head = this.add.circle(0, -20, 18, 0xffdbac);
-        const label = this.add.text(0, -55, '隱士高人', {
+        const sprite = spriteManager.createNPCAnimated(this, 'xiaoyao', x, y, 1.8);
+        const shadow = this.add.ellipse(x, y + 15, 50, 20, 0x000000, 0.3);
+        const label = this.add.text(x, y - 55, '隱士高人', {
             fontSize: '14px', color: '#9370db', fontFamily: 'serif', stroke: '#000', strokeThickness: 2
         }).setOrigin(0.5);
-        const icon = this.add.text(0, 10, '🧙', { fontSize: '24px' }).setOrigin(0.5);
-        const interactHint = this.add.text(0, 60, '點擊互動', {
+        const interactHint = this.add.text(x, y + 55, '點擊互動', {
             fontSize: '12px', color: '#c9a227', fontFamily: 'serif'
         }).setOrigin(0.5).setAlpha(0);
 
-        container.add([shadow, body, head, icon, label, interactHint]);
-
-        const hitbox = this.add.rectangle(x, y, 60, 80, 0xffffff, 0)
+        const hitbox = this.add.rectangle(x, y, 100, 120, 0xffffff, 0)
             .setInteractive({ useHandCursor: true });
-        hitbox.setData('container', container);
+        hitbox.setData('sprite', sprite);
         hitbox.setData('hint', interactHint);
+        hitbox.setData('shadow', shadow);
         hitbox.on('pointerover', () => {
             this.tweens.add({ targets: interactHint, alpha: 1, duration: 200 });
-            container.setScale(1.05);
+            sprite.setScale(1.95);
+            hitbox.setStrokeStyle(2, 0x9370db, 0.3);
         });
         hitbox.on('pointerout', () => {
             this.tweens.add({ targets: interactHint, alpha: 0, duration: 200 });
-            container.setScale(1);
+            sprite.setScale(1.8);
+            hitbox.setStrokeStyle(0, 0x000000, 0);
         });
         hitbox.on('pointerdown', () => {
             this.scene.pause();
@@ -946,11 +921,15 @@ export default class WorldScene extends Phaser.Scene {
 
         this.player.setVelocity(vx * speed, vy * speed);
 
-        if (container) {
-            container.setPosition(this.player.x, this.player.y);
+        const sprite = this.player.getData('sprite');
+        const shadow = this.player.getData('shadow');
 
-            if (vx < 0) container.setScale(-1, 1);
-            else if (vx > 0) container.setScale(1, 1);
+        if (sprite) {
+            sprite.setPosition(this.player.x, this.player.y);
+            spriteManager.updateWalkAnimation(sprite, vx, vy);
+        }
+        if (shadow) {
+            shadow.setPosition(this.player.x, this.player.y + 25);
         }
 
         
