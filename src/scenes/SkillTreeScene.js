@@ -103,7 +103,7 @@ export default class SkillTreeScene extends Phaser.Scene {
     showSkillPicker(slotIndex) {
         const p = dataManager.data.player;
         const cx = 400;
-        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.8).setInteractive().setDepth(10);
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.8).setOrigin(0).setInteractive().setDepth(10);
         const panel = this.add.rectangle(cx, 360, 350, 400, 0x1a1a2e).setStrokeStyle(2, 0xc9a227).setDepth(10);
         const elements = [overlay, panel];
 

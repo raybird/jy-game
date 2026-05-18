@@ -61,9 +61,11 @@ export default class BattleScene extends Phaser.Scene {
         this.input.keyboard.on('keydown-FOUR', () => this.useSkill(3));
         this.input.keyboard.on('keydown-R', () => this.useUltimate());
         this.input.keyboard.on('keydown-F', () => this.defend());
+        this.input.keyboard.on('keydown-Z', () => this.showItemsPanel());
 
         this.statuses = { player: [], enemy: [] };
         this.statusIcons = { player: null, enemy: null };
+        this.buffs = { atk: 0, def: 0, active: false };
 
         this.cameras.main.flash(300, 255, 255, 255);
         this.cameras.main.shake(200, 0.005);
@@ -243,7 +245,7 @@ export default class BattleScene extends Phaser.Scene {
             lineSpacing: 6, wordWrap: { width: 1100 }
         });
 
-        this.add.text(100, 590, '💡 數字鍵 1-4 招式　空白鍵普攻　F 防禦　R 絕招', {
+        this.add.text(100, 590, '💡 數字鍵 1-4 招式　空白鍵普攻　F 防禦　R 絕招　Z 道具', {
             fontSize: '12px', color: '#666666', fontFamily: 'Microsoft JhengHei'
         });
 
@@ -314,12 +316,110 @@ export default class BattleScene extends Phaser.Scene {
         this.atbActive = true;
     }
 
+    showItemsPanel() {
+        if (!this.battleActive || !this.playerTurn) return;
+
+        const inv = dataManager.data.player.inventory;
+        const consumables = inv.filter(item => {
+            const def = ITEMS[item.id];
+            return def && def.type === 'consumable';
+        });
+
+        if (consumables.length === 0) {
+            this.log('⚠ 沒有可用道具！');
+            return;
+        }
+
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setOrigin(0).setInteractive();
+        const panel = this.add.rectangle(640, 360, 400, 280 + consumables.length * 30, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
+        const elements = [overlay, panel];
+
+        let iy = 180;
+        this.add.text(640, iy, '📦 使用道具', {
+            fontSize: '24px', fill: '#ffd700', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        iy += 40;
+
+        consumables.forEach((item, idx) => {
+            const def = ITEMS[item.id];
+            const row = this.add.text(640, iy, `${def.name} ×${item.amount}`, {
+                fontSize: '16px', fill: '#fff', fontFamily: 'serif',
+                backgroundColor: '#2a2a4a', padding: { x: 12, y: 6 }
+            }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+            row.on('pointerdown', () => {
+                const result = dataManager.useItem(item.id);
+                if (result.ok) {
+                    this.applyItemEffect(result);
+                    row.setText(`${def.name} ✅ ${result.itemName}`);
+                    this.time.delayedCall(300, () => {
+                        elements.forEach(e => e.destroy());
+                    });
+                }
+            });
+            iy += 32;
+        });
+
+        iy += 20;
+        const closeBtn = this.add.rectangle(640, iy, 100, 36, 0x8b0000)
+            .setStrokeStyle(2, 0xff4444).setInteractive({ useHandCursor: true });
+        const closeText = this.add.text(640, iy, '關閉', {
+            fontSize: '16px', fill: '#fff', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        closeBtn.on('pointerdown', () => elements.forEach(e => e.destroy()));
+    }
+
+    applyItemEffect(result) {
+        if (result.hpRestore) {
+            this.playerHp = Math.min(this.playerMaxHp, this.playerHp + result.hpRestore);
+            this.updatePlayerHpBar();
+            this.log(`✨ 使用 ${result.itemName}，恢復 HP ${result.hpRestore}！`);
+            this.showHealEffect();
+        }
+        if (result.mpRestore) {
+            this.playerMp = Math.min(this.playerMaxMp, this.playerMp + result.mpRestore);
+            this.log(`💧 使用 ${result.itemName}，恢復 MP ${result.mpRestore}！`);
+        }
+        if (result.atkBuff) {
+            this.buffs.atk = result.atkBuff.amount;
+            this.buffs.active = true;
+            this.log(`⚔ 獲得攻擊增益 +${result.atkBuff.amount}！(${result.atkBuff.duration}秒)`);
+            if (this.buffs.timer) this.buffs.timer.remove();
+            this.buffs.timer = this.time.delayedCall(result.atkBuff.duration * 1000, () => {
+                this.buffs.atk = 0;
+                this.buffs.active = false;
+                this.log('⚔ 攻擊增益效果結束');
+            });
+        }
+        if (result.defBuff) {
+            this.buffs.def = result.defBuff.amount;
+            this.buffs.active = true;
+            this.log(`🛡 獲得防禦增益 +${result.defBuff.amount}！(${result.defBuff.duration}秒)`);
+            if (this.buffs.timer) this.buffs.timer.remove();
+            this.buffs.timer = this.time.delayedCall(result.defBuff.duration * 1000, () => {
+                this.buffs.def = 0;
+                this.buffs.active = false;
+                this.log('🛡 防禦增益效果結束');
+            });
+        }
+        this.endPlayerTurn();
+    }
+
+    showHealEffect() {
+        const ring = this.add.circle(this.playerContainer.x, this.playerContainer.y - 20, 20, 0x44ff44, 0.5);
+        this.tweens.add({
+            targets: ring, scaleX: 3, scaleY: 3, alpha: 0, duration: 500,
+            onComplete: () => ring.destroy()
+        });
+    }
+
     attack() {
         if (!this.battleActive || !this.playerTurn) return;
 
         const attrs = dataManager.data.player.attributes || {};
         const str = attrs.str !== undefined ? attrs.str : (dataManager.data.player.strength || 10);
-        const damage = 10 + Math.floor(str * 0.5);
+        let damage = 10 + Math.floor(str * 0.5);
+        if (this.buffs.atk) damage += this.buffs.atk;
         this.playerAttackAnimation();
         this.time.delayedCall(300, () => this.dealDamageToEnemy(damage));
     }
@@ -387,6 +487,8 @@ export default class BattleScene extends Phaser.Scene {
         }
 
         damage *= (1 + (skillLevel - 1) * 0.08);
+
+        if (this.buffs.atk) damage += this.buffs.atk;
 
         let critRate = 0.1 + bra * 0.005;
         if (skill.critBonus) critRate += skill.critBonus;
@@ -856,6 +958,8 @@ export default class BattleScene extends Phaser.Scene {
 
         const dmgReduction = this.getEquipmentStat('dmgReduction', 0);
         actualDamage = Math.floor(actualDamage * (1 - dmgReduction));
+
+        if (this.buffs.def) actualDamage = Math.max(1, actualDamage - this.buffs.def);
 
         this.playerHp -= actualDamage;
         dataManager.data.player.hp = this.playerHp;

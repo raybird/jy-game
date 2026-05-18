@@ -138,6 +138,25 @@ class DataManager {
         return false;
     }
 
+    useItem(itemId) {
+        const itemDef = ITEMS[itemId];
+        if (!itemDef || itemDef.type !== 'consumable') return { ok: false, reason: '無法使用此物品' };
+        if (this.getItemCount(itemId) <= 0) return { ok: false, reason: '物品數量不足' };
+
+        this.removeItem(itemId, 1);
+
+        const effect = itemDef.effect || {};
+        const result = { ok: true, itemName: itemDef.name };
+
+        if (effect.hp) result.hpRestore = effect.hp;
+        if (effect.mp) result.mpRestore = effect.mp;
+        if (effect.atkBuff) result.atkBuff = effect.atkBuff;
+        if (effect.defBuff) result.defBuff = effect.defBuff;
+        if (effect.hpRegenCombat) result.hpRegenCombat = effect.hpRegenCombat;
+
+        return result;
+    }
+
     getItemCount(itemId) {
         const item = this.data.player.inventory.find(i => i.id === itemId);
         return item ? item.amount : 0;

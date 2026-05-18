@@ -57,6 +57,9 @@ export default class WorldScene extends Phaser.Scene {
             this.scene.pause();
             this.scene.launch('QuestPanelScene');
         });
+        this.input.keyboard.on('keydown-L', () => {
+            this.showLifeSkillsOverview();
+        });
         this.updateHUD();
     }
 
@@ -258,7 +261,9 @@ export default class WorldScene extends Phaser.Scene {
         const npcs = [
             { id: 'smith', x: 280, y: 350, name: '鐵匠', color: 0xcd853f, icon: '🔨' },
             { id: 'auction', x: 640, y: 280, name: '拍賣行', color: 0xffd700, icon: '🏪' },
-            { id: 'herbalist', x: 1000, y: 350, name: '草藥商', color: 0x32cd32, icon: '🌿' }
+            { id: 'herbalist', x: 1000, y: 350, name: '草藥商', color: 0x32cd32, icon: '🌿' },
+            { id: 'tailor', x: 380, y: 350, name: '裁縫師', color: 0xda70d6, icon: '🧵' },
+            { id: 'cook', x: 900, y: 350, name: '廚師', color: 0xff8c00, icon: '🍳' },
         ];
 
         npcs.forEach(npc => {
@@ -344,7 +349,7 @@ export default class WorldScene extends Phaser.Scene {
         const panelX = 640, panelY = 350;
         const panelW = 420, panelH = 300;
 
-        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.6).setInteractive();
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.6).setOrigin(0).setInteractive();
         const panel = this.add.rectangle(panelX, panelY, panelW, panelH, 0x1a1a2e)
             .setStrokeStyle(3, 0xc9a227);
 
@@ -359,6 +364,8 @@ export default class WorldScene extends Phaser.Scene {
         switch (npcId) {
             case 'smith': this.showLifeSkillMenu('smithing', panel, overlay); break;
             case 'herbalist': this.showLifeSkillMenu('alchemy', panel, overlay); break;
+            case 'tailor': this.showLifeSkillMenu('tailoring', panel, overlay); break;
+            case 'cook': this.showLifeSkillMenu('cooking', panel, overlay); break;
             case 'auction': this.showAuctionMenu(panel, overlay); break;
         }
     }
@@ -509,7 +516,7 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     interactWithQuestNPC(npcId) {
-        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setInteractive();
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setOrigin(0).setInteractive();
         const panel = this.add.rectangle(640, 360, 500, 420, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
         const elements = [overlay, panel];
 
@@ -566,7 +573,7 @@ export default class WorldScene extends Phaser.Scene {
         const p = dataManager.data.player;
         const sect = SECTS[sectKey];
 
-        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setInteractive();
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setOrigin(0).setInteractive();
         const panel = this.add.rectangle(640, 360, 500, 400, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
         const elements = [overlay, panel];
 
@@ -675,7 +682,7 @@ export default class WorldScene extends Phaser.Scene {
         const learnable = sectManager.getLearnableArts(sectKey);
         const p = dataManager.data.player;
 
-        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setInteractive();
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setOrigin(0).setInteractive();
         const panel = this.add.rectangle(640, 360, 520, 480, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
         const elements = [overlay, panel];
 
@@ -771,11 +778,64 @@ export default class WorldScene extends Phaser.Scene {
         closeBtn.on('pointerdown', () => this.closePanel([title, levelText, expBarBg, expBar, expText, desc, craftBtn, closeBtn, closeText, panel, overlay]));
     }
 
+    showLifeSkillsOverview() {
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setOrigin(0).setInteractive();
+        const panel = this.add.rectangle(640, 360, 450, 480, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
+        const elements = [overlay, panel];
+
+        const skillIcons = { herbalism: '🌿', mining: '⛏', smithing: '🔨', tailoring: '🧵', alchemy: '⚗', cooking: '🍳', fishing: '🎣', farming: '🌾' };
+        const skillNames = { herbalism: '採藥', mining: '採礦', smithing: '鑄造', tailoring: '縫紉', alchemy: '煉丹', cooking: '廚藝', fishing: '釣魚', farming: '耕種' };
+
+        let iy = 110;
+        this.add.text(640, iy, '📋 生活技能', {
+            fontSize: '24px', fill: '#ffd700', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        iy += 35;
+
+        Object.keys(skillNames).forEach((skillId, idx) => {
+            const skill = dataManager.data.lifeSkills[skillId];
+            const expNeeded = skill.level * 100;
+            const pct = Math.min(1, skill.exp / expNeeded);
+
+            const icon = this.add.text(490, iy, `${skillIcons[skillId]} ${skillNames[skillId]}`, {
+                fontSize: '16px', fill: '#fff', fontFamily: 'serif'
+            }).setOrigin(0, 0.5);
+
+            const barBg = this.add.rectangle(620, iy, 200, 16, 0x333333).setStrokeStyle(1, 0x666666);
+            const bar = this.add.rectangle(520, iy, pct * 200, 14, 0xffd700).setOrigin(0, 0.5);
+
+            const info = this.add.text(740, iy, `Lv.${skill.level}`, {
+                fontSize: '14px', fill: '#aaa', fontFamily: 'serif'
+            }).setOrigin(0, 0.5);
+
+            iy += 40;
+        });
+
+        iy += 10;
+        this.add.text(640, iy, '💡 採集可提升技能等級 | 點擊 NPC 學習製作', {
+            fontSize: '13px', fill: '#666', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        iy += 35;
+
+        const closeBtn = this.add.rectangle(640, iy, 100, 36, 0x8b0000)
+            .setStrokeStyle(2, 0xff4444).setInteractive({ useHandCursor: true });
+        const closeText = this.add.text(640, iy, '關閉', {
+            fontSize: '16px', fill: '#fff', fontFamily: 'serif'
+        }).setOrigin(0.5);
+        closeBtn.on('pointerdown', () => elements.forEach(e => e.destroy()));
+    }
+
     showCraftingPanel(skillId) {
         const skillNames = { herbalism: '採藥', mining: '採礦', smithing: '鑄造', tailoring: '縫紉', alchemy: '煉丹', cooking: '廚藝' };
         const recipes = Object.entries(RECIPES).filter(([key, r]) => r.skill === skillId);
 
-        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setInteractive();
+        const materialNames = {
+            iron_ore: '鐵礦', bronze_ore: '青銅礦', gold_ore: '金礦',
+            herb: '草藥', ginseng: '人蔘', leather: '皮革',
+            fish: '魚', rice: '米',
+        };
+
+        const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setOrigin(0).setInteractive();
         const panel = this.add.rectangle(640, 360, 520, 480, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
         const elements = [overlay, panel];
 
@@ -795,7 +855,8 @@ export default class WorldScene extends Phaser.Scene {
             recipes.forEach(([key, recipe]) => {
                 const mats = Object.entries(recipe.materials).map(([id, count]) => {
                     const owned = dataManager.getItemCount(id);
-                    return `${id} ${owned}/${count}`;
+                    const label = materialNames[id] || id;
+                    return `${label} ${owned}/${count}`;
                 }).join(' ');
                 const row = this.add.text(640, iy, `${recipe.name}  [${mats}]`, {
                     fontSize: '14px', fill: '#fff', fontFamily: 'serif',
@@ -831,10 +892,14 @@ export default class WorldScene extends Phaser.Scene {
 
     getSkillDescription(skillId) {
         const descriptions = {
-            herbalism: '采集珍貴草藥，用於煉丹製藥。\n草藥可用於製作回復藥水。',
+            herbalism: '採集珍貴草藥，用於煉丹製藥。\n草藥可用於製作回復藥水。',
             mining: '開採各種礦石，用於鑄造武器。\n礦石是製作裝備的必要材料。',
             smithing: '將礦石鍛造成武器和工具。\n需要採礦技能配合。',
-            tailoring: '縫製衣物和飾品。\n皮革可用於製作護甲。'
+            tailoring: '縫製衣物和飾品。\n皮革可用於製作護甲。',
+            alchemy: '煉製丹藥與藥水。\n可製作回復HP/MP的藥品。',
+            cooking: '烹飪各種食物。\n食物可提供戰鬥中的增益效果。',
+            fishing: '在溪流、湖泊釣魚。\n魚是烹飪的重要材料。',
+            farming: '種植農作物。\n稻米和藥材可從農地收穫。',
         };
         return descriptions[skillId] || '';
     }
