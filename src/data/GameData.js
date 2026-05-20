@@ -43,7 +43,11 @@ export const ENEMIES = {
     quanzhen_disciple: { name: '全真弟子', hp: 60, attack: 10, defense: 2, speed: 8 },
     taoist: { name: '道士', hp: 80, attack: 15, defense: 3, speed: 10 },
     mingjiao_member: { name: '明教教徒', hp: 90, attack: 20, defense: 5, speed: 12 },
-    persian: { name: '波斯人', hp: 110, attack: 25, defense: 8, speed: 15 }
+    persian: { name: '波斯人', hp: 110, attack: 25, defense: 8, speed: 15 },
+    wolf: { name: '野狼', hp: 35, attack: 8, defense: 1, speed: 14 },
+    deer: { name: '野鹿', hp: 25, attack: 5, defense: 0, speed: 12 },
+    bear: { name: '棕熊', hp: 70, attack: 18, defense: 4, speed: 6 },
+    tiger: { name: '猛虎', hp: 90, attack: 22, defense: 5, speed: 11 },
 };
 
 export const RECIPES = {
@@ -76,8 +80,9 @@ export const ENCOUNTER_CONFIG = {
     interval: 800,
     baseChance: 0.10,
     mapEnemies: {
-        zhongnan: ['quanzhen_disciple', 'taoist'],
-        guangming: ['mingjiao_member', 'persian']
+        xianyang: ['wolf', 'deer'],
+        zhongnan: ['quanzhen_disciple', 'taoist', 'wolf', 'deer', 'bear'],
+        guangming: ['mingjiao_member', 'persian', 'wolf', 'bear', 'tiger']
     }
 };
 
@@ -210,10 +215,34 @@ export const LOOT_TABLES = {
         bossGuaranteed: [{ id: 'iron_sword', min: 1, max: 1 }, { id: 'ring', min: 1, max: 1 }]
     },
     persian: {
-        common: [{ id: 'leather', min: 2, max: 3, chance: 0.4 }],
+        common: [{ id: 'bronze_ore', min: 1, max: 3, chance: 0.35 }],
         rare: [{ id: 'leather_armor', min: 1, max: 1, chance: 0.15 }],
-        eliteGuaranteed: [{ id: 'leather', min: 3, max: 5 }],
+        eliteGuaranteed: [{ id: 'bronze_ore', min: 3, max: 5 }],
         bossGuaranteed: [{ id: 'leather_armor', min: 1, max: 1 }, { id: 'waist_pendant', min: 1, max: 1 }]
+    },
+    wolf: {
+        common: [{ id: 'leather', min: 1, max: 1, chance: 0.5 }],
+        rare: [{ id: 'leather', min: 2, max: 3, chance: 0.2 }, { id: 'herb', min: 1, max: 1, chance: 0.2 }],
+        eliteGuaranteed: [{ id: 'leather', min: 2, max: 3 }],
+        bossGuaranteed: [{ id: 'leather', min: 5, max: 8 }, { id: 'leather_armor', min: 1, max: 1 }]
+    },
+    deer: {
+        common: [{ id: 'leather', min: 1, max: 1, chance: 0.35 }, { id: 'herb', min: 1, max: 2, chance: 0.4 }],
+        rare: [{ id: 'herb', min: 3, max: 5, chance: 0.2 }],
+        eliteGuaranteed: [{ id: 'leather', min: 1, max: 2 }],
+        bossGuaranteed: [{ id: 'leather', min: 3, max: 5 }, { id: 'herb_potion', min: 2, max: 3 }]
+    },
+    bear: {
+        common: [{ id: 'leather', min: 2, max: 3, chance: 0.5 }],
+        rare: [{ id: 'leather', min: 3, max: 5, chance: 0.2 }, { id: 'herb', min: 2, max: 3, chance: 0.25 }],
+        eliteGuaranteed: [{ id: 'leather', min: 3, max: 5 }],
+        bossGuaranteed: [{ id: 'leather', min: 6, max: 10 }, { id: 'leather_armor', min: 1, max: 1 }, { id: 'amulet', min: 1, max: 1 }]
+    },
+    tiger: {
+        common: [{ id: 'leather', min: 2, max: 3, chance: 0.55 }],
+        rare: [{ id: 'leather', min: 4, max: 6, chance: 0.2 }, { id: 'iron_ore', min: 2, max: 3, chance: 0.2 }],
+        eliteGuaranteed: [{ id: 'leather', min: 3, max: 5 }],
+        bossGuaranteed: [{ id: 'leather', min: 8, max: 12 }, { id: 'leather_armor', min: 1, max: 2 }, { id: 'ring', min: 1, max: 1 }]
     }
 };
 

@@ -526,7 +526,11 @@ export default class BattleScene extends Phaser.Scene {
             quanzhen_disciple: 'yanggang',
             taoist: 'yinrou',
             mingjiao_member: 'gangmeng',
-            persian: 'yanggang'
+            persian: 'yanggang',
+            wolf: 'gangmeng',
+            deer: 'qingling',
+            bear: 'yanggang',
+            tiger: 'yanggang',
         };
         const enemyAttr = enemyAttrMap[enemyId] || 'gangmeng';
 

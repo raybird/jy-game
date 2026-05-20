@@ -170,8 +170,14 @@ export default class WorldScene extends Phaser.Scene {
         const sprite = spriteManager.createPlayerWalkSprite(this, charId, 640, 500);
         const shadow = this.add.ellipse(640, 525, 50, 20, 0x000000, 0.3);
 
-        this.player = this.physics.add.sprite(640, 500, null);
-        this.player.setCircle(25);
+        const gfx = this.make.graphics({ x: 0, y: 0, add: false });
+        gfx.fillStyle(0xffffff, 0);
+        gfx.fillRect(0, 0, 1, 1);
+        gfx.generateTexture('_player_hitbox', 1, 1);
+        gfx.destroy();
+
+        this.player = this.physics.add.sprite(640, 500, '_player_hitbox');
+        this.player.setVisible(false);
         this.player.setCollideWorldBounds(true);
         this.player.body.setSize(30, 30);
         this.player.setData('shadow', shadow);
@@ -969,7 +975,6 @@ export default class WorldScene extends Phaser.Scene {
     update(time, delta) {
         if (!this.player || this.chatActive) return;
 
-        const container = this.player.getData('container');
         const speed = 160;
         let vx = 0, vy = 0;
 
