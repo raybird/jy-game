@@ -1,3 +1,4 @@
+// @ts-check
 import Phaser from 'phaser';
 import { questManager } from '../systems/QuestManager.js';
 

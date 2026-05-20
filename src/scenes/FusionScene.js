@@ -1,3 +1,4 @@
+// @ts-check
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
 import { sectManager } from '../systems/SectManager.js';

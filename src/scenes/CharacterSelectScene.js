@@ -1,3 +1,4 @@
+// @ts-check
 import Phaser from 'phaser';
 import { INITIAL_PLAYER, FIVE_ATTRS, CHARACTERS, CHARACTER_SKILLS } from '../data/GameData.js';
 import { dataManager } from '../systems/DataManager.js';
@@ -112,7 +113,7 @@ export default class CharacterSelectScene extends Phaser.Scene {
         });
 
         confirmBtn.on('pointerdown', () => {
-            const p = dataManager.data.player;
+            const p = dataManager.getPlayer();
 
             p.name = this.playerName;
             p.attributes = { ...this.attrs };

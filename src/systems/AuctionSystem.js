@@ -4,9 +4,9 @@ class AuctionSystem {
     listItem(itemId, price) {
         const playerName = dataManager.data.player.name || '玩家';
         const listing = {
-            itemId,
-            price,
-            seller: playerName
+            id: 'listing_' + Date.now(),
+            amount: 1,
+            itemId, price, seller: playerName
         };
         dataManager.data.auction.listings.push(listing);
         return true;

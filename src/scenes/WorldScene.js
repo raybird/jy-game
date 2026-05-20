@@ -1,3 +1,4 @@
+// @ts-check
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
 import { saveSystem } from '../systems/SaveSystem.js';
@@ -165,7 +166,7 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     createPlayer() {
-        const charId = dataManager.data.player.characterId;
+        const charId = dataManager.getPlayer().characterId;
 
         const sprite = spriteManager.createPlayerWalkSprite(this, charId, 640, 500);
         const shadow = this.add.ellipse(640, 525, 50, 20, 0x000000, 0.3);
@@ -195,7 +196,7 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     setupHUD() {
-        const p = dataManager.data.player;
+        const p = dataManager.getPlayer();
 
         const hudBg = this.add.rectangle(640, 700, 300, 80, 0x000000, 0.7).setStrokeStyle(2, 0xc9a227);
 
@@ -223,7 +224,7 @@ export default class WorldScene extends Phaser.Scene {
             fontSize: '12px', color: '#aaaaaa', fontFamily: 'Arial'
         });
 
-        const eq = dataManager.data.player.equipped;
+        const eq = dataManager.getPlayer().equipped;
         this.equipText = this.add.text(280, 720, '武:' + (ITEMS[eq.weapon] ? ITEMS[eq.weapon].name : '無')
             + ' 防:' + (ITEMS[eq.armor] ? ITEMS[eq.armor].name : '無')
             + ' 飾:' + (ITEMS[eq.accessory] ? ITEMS[eq.accessory].name : '無'), {
@@ -240,7 +241,7 @@ export default class WorldScene extends Phaser.Scene {
         });
 
         this.skillLabels = [];
-        const charId = dataManager.data.player.characterId;
+        const charId = dataManager.getPlayer().characterId;
         const skills = (CHARACTER_SKILLS && CHARACTER_SKILLS[charId]) || [];
         for (let i = 0; i < 4; i++) {
             const bg = this.add.rectangle(skillX + i * 85, 665, 75, 45, 0x1a1a4a)
@@ -576,7 +577,7 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     interactWithSectNPC(sectKey) {
-        const p = dataManager.data.player;
+        const p = dataManager.getPlayer();
         const sect = SECTS[sectKey];
 
         const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setOrigin(0).setInteractive();
@@ -686,7 +687,7 @@ export default class WorldScene extends Phaser.Scene {
     showArtLearningPanel(sectKey) {
         const sect = SECTS[sectKey];
         const learnable = sectManager.getLearnableArts(sectKey);
-        const p = dataManager.data.player;
+        const p = dataManager.getPlayer();
 
         const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.7).setOrigin(0).setInteractive();
         const panel = this.add.rectangle(640, 360, 520, 480, 0x1a1a2e).setStrokeStyle(3, 0xc9a227);
@@ -963,7 +964,7 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     updateHUD() {
-        const p = dataManager.data.player;
+        const p = dataManager.getPlayer();
         this.hpBar.width = Math.max(0, (p.hp / p.maxHp) * 156);
         this.mpBar.width = Math.max(0, (p.mp / p.maxMp) * 156);
         this.hpText.setText(`${p.hp}/${p.maxHp}`);
@@ -1020,7 +1021,7 @@ export default class WorldScene extends Phaser.Scene {
             }
         }
 
-        const p = dataManager.data.player;
+        const p = dataManager.getPlayer();
         if (p.hp < p.maxHp) {
             p.hp = Math.min(p.maxHp, p.hp + p.maxHp * 0.01 * delta / 1000);
         }
@@ -1111,6 +1112,7 @@ export default class WorldScene extends Phaser.Scene {
     }
 
     addChatMessage(text) {
+        if (!this.chatMessages || !this.chatText) return;
         this.chatMessages.push({ text, time: Date.now() });
         if (this.chatMessages.length > 20) this.chatMessages.shift();
         const lines = this.chatMessages.map(m => m.text).join('\n');

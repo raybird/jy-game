@@ -1,3 +1,5 @@
+// @ts-check
+
 import Phaser from 'phaser';
 
 const SHEET_KEY_PREFIX = 'sprite_';
@@ -33,7 +35,7 @@ const SECT_SPRITE_MAP = {
     huashan:  'huashan',
     gaibang:  'gaibang',
     mingjiao: 'mingjiao',
-    gubai:    'gumu',
+    gumu:     'gumu',
     quanzhen: 'quanzhen',
     xiaoyao:  'xiaoyao',
     riyue:    'riyue',
@@ -59,6 +61,9 @@ const DIR_FRAME_RANGES = {
 };
 
 class SpriteManager {
+    /**
+     * @param {Phaser.Scene} scene
+     */
     preload(scene) {
         if (this._preloaded) return;
         Object.values(SPRITE_REGISTRY).forEach(({ path, key }) => {
@@ -70,6 +75,9 @@ class SpriteManager {
         this._preloaded = true;
     }
 
+    /**
+     * @param {Phaser.Scene} scene
+     */
     createAnimations(scene) {
         if (this._animsCreated) return;
         Object.keys(SPRITE_REGISTRY).forEach(charId => {
@@ -154,10 +162,20 @@ class SpriteManager {
         return sprite;
     }
 
+    /**
+     * @param {Phaser.Scene} scene
+     * @param {string} charId
+     * @param {number} x
+     * @param {number} y
+     * @returns {Phaser.GameObjects.Sprite | Phaser.GameObjects.Graphics}
+     */
     createPlayerWalkSprite(scene, charId, x, y) {
         const entry = WALK_REGISTRY[charId];
-        const key = entry ? entry.key : null;
-        if (!key) return this._fallbackSprite(scene, x, y);
+        if (!entry || !entry.key) {
+            console.warn(`SpriteManager: no walk sprite for "${charId}", using fallback`);
+            return this._fallbackSprite(scene, x, y);
+        }
+        const key = entry.key;
 
         ['down', 'left', 'right', 'up'].forEach(dir => {
             const animKey = key + '_walk_' + dir;
@@ -181,8 +199,13 @@ class SpriteManager {
         return sprite;
     }
 
+    /**
+     * @param {Phaser.GameObjects.Sprite} sprite
+     * @param {number} vx
+     * @param {number} vy
+     */
     updateWalkAnimation(sprite, vx, vy) {
-        if (!sprite || !sprite.anims) return;
+        if (!sprite || !sprite.anims || !sprite.texture) return;
 
         let dir = sprite.getData('direction') || 'down';
 

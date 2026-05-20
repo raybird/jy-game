@@ -1,3 +1,4 @@
+// @ts-check
 import { dataManager } from './DataManager.js';
 import { QUEST_TEMPLATES, ITEMS } from '../data/GameData.js';
 import { soundManager } from './SoundManager.js';
@@ -77,7 +78,7 @@ class QuestManager {
         if (r.fame) dataManager.addFame(r.fame);
         if (r.karma) dataManager.addKarma(r.karma);
         if (r.sectRep) {
-            dataManager.data.player.sectReputation = (dataManager.data.player.sectReputation || 0) + r.sectRep;
+            dataManager.getPlayer().sectReputation = (dataManager.getPlayer().sectReputation || 0) + r.sectRep;
         }
 
         soundManager.play('levelup');

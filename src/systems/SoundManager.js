@@ -1,11 +1,19 @@
+// @ts-check
+
 class SoundManager {
     constructor() {
+        /** @type {AudioContext|null} */
         this.ctx = null;
+    }
+
+    /** @returns {AudioContext} */
+    getCtx() {
+        return /** @type {AudioContext} */ (this.ctx);
     }
 
     ensureContext() {
         if (!this.ctx) {
-            this.ctx = new (window.AudioContext || window.webkitAudioContext)();
+            this.ctx = new (window.AudioContext || /** @type {any} */ (window).webkitAudioContext)();
         }
         if (this.ctx.state === 'suspended') {
             this.ctx.resume();
@@ -37,30 +45,32 @@ class SoundManager {
     }
 
     tone(freq, duration, type, volume) {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const ctx = this.getCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.type = type;
         osc.frequency.value = freq;
-        gain.gain.setValueAtTime(volume, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration / 1000);
+        gain.gain.setValueAtTime(volume, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration / 1000);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(ctx.destination);
         osc.start();
-        osc.stop(this.ctx.currentTime + duration / 1000);
+        osc.stop(ctx.currentTime + duration / 1000);
     }
 
     sweep(startFreq, endFreq, duration, type, volume) {
-        const osc = this.ctx.createOscillator();
-        const gain = this.ctx.createGain();
+        const ctx = this.getCtx();
+        const osc = ctx.createOscillator();
+        const gain = ctx.createGain();
         osc.type = type;
-        osc.frequency.setValueAtTime(startFreq, this.ctx.currentTime);
-        osc.frequency.linearRampToValueAtTime(endFreq, this.ctx.currentTime + duration / 1000);
-        gain.gain.setValueAtTime(volume, this.ctx.currentTime);
-        gain.gain.exponentialRampToValueAtTime(0.001, this.ctx.currentTime + duration / 1000);
+        osc.frequency.setValueAtTime(startFreq, ctx.currentTime);
+        osc.frequency.linearRampToValueAtTime(endFreq, ctx.currentTime + duration / 1000);
+        gain.gain.setValueAtTime(volume, ctx.currentTime);
+        gain.gain.exponentialRampToValueAtTime(0.001, ctx.currentTime + duration / 1000);
         osc.connect(gain);
-        gain.connect(this.ctx.destination);
+        gain.connect(ctx.destination);
         osc.start();
-        osc.stop(this.ctx.currentTime + duration / 1000);
+        osc.stop(ctx.currentTime + duration / 1000);
     }
 }
 

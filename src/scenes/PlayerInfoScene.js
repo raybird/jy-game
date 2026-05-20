@@ -1,3 +1,4 @@
+// @ts-check
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
 import { sectManager } from '../systems/SectManager.js';
@@ -10,7 +11,7 @@ export class PlayerInfoScene extends Phaser.Scene {
 
     create() {
         this.cameras.main.setBackgroundColor('#000000');
-        const p = dataManager.data.player;
+        const p = dataManager.getPlayer();
 
         const cx = 400;
         let iy = 40;

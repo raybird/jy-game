@@ -1,3 +1,4 @@
+// @ts-check
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
 import { sectManager } from '../systems/SectManager.js';
@@ -9,7 +10,7 @@ export default class SkillTreeScene extends Phaser.Scene {
 
     create() {
         this.cameras.main.setBackgroundColor('#000000');
-        const p = dataManager.data.player;
+        const p = dataManager.getPlayer();
         const cx = 400;
         let iy = 30;
 
@@ -101,7 +102,7 @@ export default class SkillTreeScene extends Phaser.Scene {
     }
 
     showSkillPicker(slotIndex) {
-        const p = dataManager.data.player;
+        const p = dataManager.getPlayer();
         const cx = 400;
         const overlay = this.add.rectangle(0, 0, 1280, 720, 0x000000, 0.8).setOrigin(0).setInteractive().setDepth(10);
         const panel = this.add.rectangle(cx, 360, 350, 400, 0x1a1a2e).setStrokeStyle(2, 0xc9a227).setDepth(10);

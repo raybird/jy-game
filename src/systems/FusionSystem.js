@@ -1,10 +1,11 @@
+// @ts-check
 import { dataManager } from './DataManager.js';
 import { sectManager } from './SectManager.js';
 import { soundManager } from './SoundManager.js';
 
 class FusionSystem {
     canFuse() {
-        const p = dataManager.data.player;
+        const p = dataManager.getPlayer();
         const artCount = p.martialArts.length;
         if (artCount < 8) return { ok: false, reason: `需要至少 8 套武功（當前 ${artCount}）` };
         const highLevel = p.martialArts.filter(a => a.level >= 3);
@@ -14,16 +15,16 @@ class FusionSystem {
     }
 
     getFuseableArts() {
-        return dataManager.data.player.martialArts.filter(a => a.level >= 3);
+        return dataManager.getPlayer().martialArts.filter(a => a.level >= 3);
     }
 
     fuse(baseArtId, subArtId, customName) {
-        const baseEntry = dataManager.data.player.martialArts.find(a => a.id === baseArtId);
-        const subEntry = dataManager.data.player.martialArts.find(a => a.id === subArtId);
+        const baseEntry = dataManager.getPlayer().martialArts.find(a => a.id === baseArtId);
+        const subEntry = dataManager.getPlayer().martialArts.find(a => a.id === subArtId);
         if (!baseEntry || !subEntry) return { ok: false, reason: '武功不存在' };
         if (baseEntry.level < 3 || subEntry.level < 3) return { ok: false, reason: '需要 LV3+ 的武功' };
 
-        const p = dataManager.data.player;
+        const p = dataManager.getPlayer();
         if (p.studyPoints < 500) return { ok: false, reason: '學點不足' };
 
         const baseDef = sectManager.getArtDefinition(baseArtId);
@@ -34,7 +35,7 @@ class FusionSystem {
         const newArt = this.generateFusedArt(baseDef, subDef, customName, newId);
 
         p.studyPoints -= 500;
-        p.martialArts.push({ id: newId, level: 1, ...newArt });
+        p.martialArts.push({ level: 1, ...newArt });
         soundManager.play('levelup');
 
         return { ok: true, art: newArt };

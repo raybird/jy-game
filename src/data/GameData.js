@@ -1,3 +1,18 @@
+// @ts-check
+
+/** @typedef {import('../types.js').MartialArtDefinition} MartialArtDefinition */
+/** @typedef {import('../types.js').SectDefinition} SectDefinition */
+/** @typedef {import('../types.js').EnemyData} EnemyData */
+/** @typedef {import('../types.js').CharacterData} CharacterData */
+/** @typedef {import('../types.js').CharacterSkill} CharacterSkill */
+/** @typedef {import('../types.js').ItemDefinition} ItemDefinition */
+/** @typedef {import('../types.js').RecipeDefinition} RecipeDefinition */
+/** @typedef {import('../types.js').LootTable} LootTable */
+/** @typedef {import('../types.js').GatheringSpot} GatheringSpot */
+/** @typedef {import('../types.js').QuestTemplate} QuestTemplate */
+/** @typedef {import('../types.js').AchievementDefinition} AchievementDefinition */
+/** @typedef {import('../types.js').CraftQualityConfig} CraftQualityConfig */
+
 export const GameData = {
     player: {
         name: '',
@@ -31,6 +46,7 @@ export const GameData = {
     inBattle: false
 };
 
+/** @type {Record<string, CharacterData>} */
 export const CHARACTERS = {
     guojing: { name: '郭靖', desc: '防御型，血量高', baseHp: 150, baseMp: 50, str: 15, con: 15, agi: 8, ip: 10 },
     yangguo: { name: '楊過', desc: '暴擊型，會心率高', baseHp: 100, baseMp: 60, str: 12, con: 10, agi: 15, ip: 12 },
@@ -39,6 +55,7 @@ export const CHARACTERS = {
     linghu: { name: '令狐冲', desc: '均衡型，適用性廣', baseHp: 120, baseMp: 70, str: 12, con: 12, agi: 12, ip: 12 }
 };
 
+/** @type {Record<string, EnemyData>} */
 export const ENEMIES = {
     quanzhen_disciple: { name: '全真弟子', hp: 60, attack: 10, defense: 2, speed: 8 },
     taoist: { name: '道士', hp: 80, attack: 15, defense: 3, speed: 10 },
@@ -50,6 +67,7 @@ export const ENEMIES = {
     tiger: { name: '猛虎', hp: 90, attack: 22, defense: 5, speed: 11 },
 };
 
+/** @type {Record<string, RecipeDefinition>} */
 export const RECIPES = {
     iron_sword: { name: '鐵劍', type: 'weapon', skill: 'smithing', levelRequired: 1, materials: { iron_ore: 2 }, result: 'iron_sword', stats: { attack: 10 } },
     herb_potion: { name: '草藥水', type: 'consumable', skill: 'alchemy', levelRequired: 1, materials: { herb: 3 }, result: 'herb_potion', effect: { hp: 50 } },
@@ -61,6 +79,7 @@ export const RECIPES = {
     def_food: { name: '鐵骨湯', type: 'consumable', skill: 'cooking', levelRequired: 2, materials: { fish: 2, herb: 1 }, result: 'def_food', effect: { defBuff: { amount: 3, duration: 180 } } },
 };
 
+/** @type {Record<string, ItemDefinition>} */
 export const ITEMS = {
     iron_ore: { name: '鐵礦', type: 'material' },
     bronze_ore: { name: '青銅礦', type: 'material' },
@@ -86,6 +105,7 @@ export const ENCOUNTER_CONFIG = {
     }
 };
 
+/** @type {Record<string, CharacterSkill[]>} */
 export const CHARACTER_SKILLS = {
     guojing: [
         { name: '降龍十八掌', cost: 10, damageRatio: 1.8, type: 'inner', desc: '剛猛掌法，造成大量內功傷害' },
@@ -119,6 +139,7 @@ export const CHARACTER_SKILLS = {
     ]
 };
 
+/** @type {{ nodeCosts: number[], nodeEffects: Object<string, number|boolean>[], passives: Object<string, {desc:string, effect:Object<string,number>}> }} */
 export const SKILL_TREE_CONFIG = {
     nodeCosts: [2, 2, 3],
     nodeEffects: [
@@ -135,6 +156,7 @@ export const SKILL_TREE_CONFIG = {
     }
 };
 
+/** @type {import('../types.js').AttributeCycleConfig} */
 export const ATTRIBUTE_CONFIG = {
     cycle: ['yinrou', 'yanggang', 'gangmeng', 'qingling'],
     names: { yinrou: '陰柔', yanggang: '陽剛', gangmeng: '剛猛', qingling: '輕靈' },
@@ -158,6 +180,7 @@ export const ATTRIBUTE_CONFIG = {
     }
 };
 
+/** @type {import('../types.js').RageConfig} */
 export const RAGE_CONFIG = {
     maxRage: 100,
     gainOnDamage: 10,
@@ -173,18 +196,21 @@ export const ULTIMATE_SKILLS = {
     linghu: { name: '獨孤九劍·破氣式', damageRatio: 3.0, ignoreDef: 1.0, status: { type: 'stun', duration: 2 }, desc: '破盡天下武功，附帶封穴' }
 };
 
+/** @type {import('../types.js').AtbSpeedConfig} */
 export const ATB_SPEEDS_CONFIG = {
     fillRate: 0.001,
     maxAtb: 100,
     playerSpeedMultiplier: 1.5
 };
 
+/** @type {Object<string, { label: string, hpMul: number, atkMul: number, defMul: number, exp: number, silver: number, weight: number }>} */
 export const ENEMY_TIERS = {
     normal: { label: '', hpMul: 1.0, atkMul: 1.0, defMul: 1.0, exp: 60, silver: 80, weight: 0.75 },
     elite: { label: '精英', hpMul: 2.0, atkMul: 1.5, defMul: 1.3, exp: 150, silver: 200, weight: 0.20 },
     boss: { label: '頭目', hpMul: 3.0, atkMul: 2.0, defMul: 1.5, exp: 300, silver: 500, weight: 0.05 }
 };
 
+/** @returns {string} */
 export function rollEnemyTier() {
     const roll = Math.random();
     let cumulative = 0;
@@ -195,6 +221,7 @@ export function rollEnemyTier() {
     return 'normal';
 }
 
+/** @type {Record<string, LootTable>} */
 export const LOOT_TABLES = {
     quanzhen_disciple: {
         common: [{ id: 'iron_ore', min: 1, max: 2, chance: 0.4 }],
@@ -277,6 +304,7 @@ export const INITIAL_PLAYER = {
     currentMap: 'xianyang',
 };
 
+/** @type {Record<string, AchievementDefinition>} */
 export const ACHIEVEMENTS = {
     first_battle: { name: '初出茅廬', desc: '完成第一次戰鬥', reward: { silver: 100 } },
     veteran: { name: '百戰勇士', desc: '戰鬥 10 次', reward: { item: 'herb_potion', amount: 3 } },
@@ -285,6 +313,7 @@ export const ACHIEVEMENTS = {
     skill_master: { name: '技能大師', desc: '點滿一個武功的技能樹', reward: { item: 'jade_pendant', amount: 1 } }
 };
 
+/** @type {Record<string, SectDefinition>} */
 export const SECTS = {
     shaolin: {
         name: '少林', key: 'shaolin', map: 'xianyang', npcX: 200, npcY: 200, npcName: '玄慈方丈',
@@ -345,18 +374,18 @@ export const SECTS = {
             { id: 'quanzhen_xiantianqi', name: '先天罡氣', tier: 'ultimate', type: 'inner', mp: 15, ratio: 1.2, aoe: true, desc: '群體內功' },
         ],
     },
-    gubai: {
-        name: '古墓', key: 'gubai', map: 'zhongnan', npcX: 900, npcY: 450, npcName: '小龍女',
+    gumu: {
+        name: '古墓', key: 'gumu', map: 'zhongnan', npcX: 900, npcY: 450, npcName: '小龍女',
         karmaRequirement: -50,
         martialArts: [
-            { id: 'gubai_yunv', name: '玉女劍法', tier: 'basic', type: 'outer', mp: 8, ratio: 1.5, desc: '古墓入門劍法' },
-            { id: 'gubai_meinv', name: '美女拳法', tier: 'basic', type: 'outer', mp: 10, ratio: 1.4, status: { type: 'bleed', duration: 2 }, desc: '附內傷' },
-            { id: 'gubai_buque', name: '捕雀功', tier: 'basic', type: 'passive', stats: { dodgeBonus: 0.05 }, desc: '+閃避' },
-            { id: 'gubai_yunvx', name: '玉女素心劍', tier: 'mid', type: 'outer', mp: 12, ratio: 1.3, hits: 2, desc: '雙擊' },
-            { id: 'gubai_tianluo', name: '天羅地網勢', tier: 'mid', type: 'outer', mp: 12, ratio: 1.2, aoe: true, desc: '群體攻擊' },
-            { id: 'gubai_yunvxinjing', name: '玉女心經', tier: 'mid', type: 'inner', mp: 12, healRatio: 0.25, cleanse: true, desc: '回HP+解狀態' },
-            { id: 'gubai_shuangjian', name: '雙劍合璧', tier: 'ultimate', type: 'outer', mp: 15, ratio: 1.4, hits: 3, desc: '極高三連擊' },
-            { id: 'gubai_bingpo', name: '冰魄銀針', tier: 'ultimate', type: 'inner', mp: 15, ratio: 2.0, status: { type: 'bleed', duration: 4 }, desc: '附毒傷' },
+            { id: 'gumu_yunv', name: '玉女劍法', tier: 'basic', type: 'outer', mp: 8, ratio: 1.5, desc: '古墓入門劍法' },
+            { id: 'gumu_meinv', name: '美女拳法', tier: 'basic', type: 'outer', mp: 10, ratio: 1.4, status: { type: 'bleed', duration: 2 }, desc: '附內傷' },
+            { id: 'gumu_buque', name: '捕雀功', tier: 'basic', type: 'passive', stats: { dodgeBonus: 0.05 }, desc: '+閃避' },
+            { id: 'gumu_yunvx', name: '玉女素心劍', tier: 'mid', type: 'outer', mp: 12, ratio: 1.3, hits: 2, desc: '雙擊' },
+            { id: 'gumu_tianluo', name: '天羅地網勢', tier: 'mid', type: 'outer', mp: 12, ratio: 1.2, aoe: true, desc: '群體攻擊' },
+            { id: 'gumu_yunvxinjing', name: '玉女心經', tier: 'mid', type: 'inner', mp: 12, healRatio: 0.25, cleanse: true, desc: '回HP+解狀態' },
+            { id: 'gumu_shuangjian', name: '雙劍合璧', tier: 'ultimate', type: 'outer', mp: 15, ratio: 1.4, hits: 3, desc: '極高三連擊' },
+            { id: 'gumu_bingpo', name: '冰魄銀針', tier: 'ultimate', type: 'inner', mp: 15, ratio: 2.0, status: { type: 'bleed', duration: 4 }, desc: '附毒傷' },
         ],
     },
     gaibang: {
@@ -466,6 +495,7 @@ export const SKILL_COSTS = {
     combatExpUpgrade: [0, 100, 300, 600, 1000],
 };
 
+/** @type {Record<string, QuestTemplate>} */
 export const QUEST_TEMPLATES = {
     escort_1: {
         id: 'escort_1', title: '護送鏢物', type: 'escort',
@@ -510,6 +540,7 @@ export const NEW_ITEMS = {
     def_food: { name: '鐵骨湯', type: 'consumable', effect: { defBuff: { amount: 3, duration: 180 } } },
 };
 
+/** @type {Record<string, GatheringSpot[]>} */
 export const GATHERING_SPOTS = {
     xianyang: [
         { type: 'herb', x: 100, y: 620, name: '野草藥', yield: { id: 'herb', min: 1, max: 2 }, cd: 5000 },
@@ -531,6 +562,7 @@ export const GATHERING_SPOTS = {
     ],
 };
 
+/** @type {CraftQualityConfig} */
 export const CRAFT_QUALITY = {
     tiers: ['普通', '精良', '極品'],
     chances: [0.6, 0.3, 0.1],

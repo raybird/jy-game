@@ -1,3 +1,4 @@
+// @ts-check
 import Phaser from 'phaser';
 import { dataManager } from '../systems/DataManager.js';
 import { saveSystem } from '../systems/SaveSystem.js';
@@ -12,6 +13,9 @@ export default class BattleScene extends Phaser.Scene {
         super({ key: 'BattleScene' });
     }
 
+    /**
+     * @param {{ enemyId?: string }} data
+     */
     init(data) {
         this.enemyId = data.enemyId || 'quanzhen_disciple';
         this.enemyTier = rollEnemyTier();
@@ -24,7 +28,7 @@ export default class BattleScene extends Phaser.Scene {
         this.enemyAtb = 0;
         this.enemyReady = false;
         this.atbActive = true;
-        const attrs = dataManager.data.player.attributes || {};
+        const attrs = /** @type {import('../types.js').FiveAttributes} */ (dataManager.data.player.attributes || {});
         const agility = attrs.bra !== undefined ? attrs.bra : (dataManager.data.player.agility || 10);
         this.playerSpeed = agility * ATB_SPEEDS_CONFIG.playerSpeedMultiplier;
         this.rage = 0;
@@ -38,7 +42,10 @@ export default class BattleScene extends Phaser.Scene {
         this.equippedSkills = equippedIds.map(id => {
             if (!id) return null;
             const def = sectManager.getArtDefinition(id);
-            if (!def) return null;
+            if (!def) {
+                console.warn(`BattleScene: unknown art "${id}", skipping`);
+                return null;
+            }
             const entry = dataManager.data.player.martialArts.find(a => a.id === id);
             return { id, def, level: entry ? entry.level : 1 };
         });
@@ -54,14 +61,14 @@ export default class BattleScene extends Phaser.Scene {
         this.createUI();
         this.createSkillButtons();
 
-        this.input.keyboard.on('keydown-SPACE', () => this.attack());
-        this.input.keyboard.on('keydown-ONE', () => this.useSkill(0));
-        this.input.keyboard.on('keydown-TWO', () => this.useSkill(1));
-        this.input.keyboard.on('keydown-THREE', () => this.useSkill(2));
-        this.input.keyboard.on('keydown-FOUR', () => this.useSkill(3));
-        this.input.keyboard.on('keydown-R', () => this.useUltimate());
-        this.input.keyboard.on('keydown-F', () => this.defend());
-        this.input.keyboard.on('keydown-Z', () => this.showItemsPanel());
+        /** @type {Phaser.Input.Keyboard.KeyboardPlugin} */ (this.input.keyboard).on('keydown-SPACE', () => this.attack());
+        /** @type {Phaser.Input.Keyboard.KeyboardPlugin} */ (this.input.keyboard).on('keydown-ONE', () => this.useSkill(0));
+        /** @type {Phaser.Input.Keyboard.KeyboardPlugin} */ (this.input.keyboard).on('keydown-TWO', () => this.useSkill(1));
+        /** @type {Phaser.Input.Keyboard.KeyboardPlugin} */ (this.input.keyboard).on('keydown-THREE', () => this.useSkill(2));
+        /** @type {Phaser.Input.Keyboard.KeyboardPlugin} */ (this.input.keyboard).on('keydown-FOUR', () => this.useSkill(3));
+        /** @type {Phaser.Input.Keyboard.KeyboardPlugin} */ (this.input.keyboard).on('keydown-R', () => this.useUltimate());
+        /** @type {Phaser.Input.Keyboard.KeyboardPlugin} */ (this.input.keyboard).on('keydown-F', () => this.defend());
+        /** @type {Phaser.Input.Keyboard.KeyboardPlugin} */ (this.input.keyboard).on('keydown-Z', () => this.showItemsPanel());
 
         this.statuses = { player: [], enemy: [] };
         this.statusIcons = { player: null, enemy: null };
@@ -75,7 +82,11 @@ export default class BattleScene extends Phaser.Scene {
         }
     }
 
-    update(time, delta) {
+    /**
+     * @param {number} _time
+     * @param {number} delta
+     */
+    update(_time, delta) {
         if (!this.battleActive || !this.atbActive) return;
 
         const fillRate = ATB_SPEEDS_CONFIG.fillRate;
@@ -154,6 +165,10 @@ export default class BattleScene extends Phaser.Scene {
         }).setOrigin(0.5);
     }
 
+    /**
+     * @param {string} charId
+     * @param {Object} charData
+     */
     createPlayer(charId, charData) {
         this.playerHp = dataManager.data.player.hp;
         this.playerMaxHp = dataManager.data.player.maxHp;
@@ -174,6 +189,9 @@ export default class BattleScene extends Phaser.Scene {
         }).setOrigin(0.5);
     }
 
+    /**
+     * @param {Object} enemyData
+     */
     createEnemy(enemyData) {
         const tierCfg = ENEMY_TIERS[this.enemyTier];
         const namePrefix = tierCfg.label ? tierCfg.label + ' ' : '';
@@ -197,6 +215,13 @@ export default class BattleScene extends Phaser.Scene {
         }).setOrigin(0.5);
     }
 
+    /**
+     * @param {number} x
+     * @param {number} y
+     * @param {number} maxHp
+     * @param {number} currentHp
+     * @param {string} id
+     */
     createHPBar(x, y, maxHp, currentHp, id) {
         const barW = 140, barH = 20, pad = 2;
         const barBg = this.add.rectangle(x, y, barW, barH, 0x333333).setStrokeStyle(2, 0x666666);
@@ -265,7 +290,7 @@ export default class BattleScene extends Phaser.Scene {
                 .setInteractive({ useHandCursor: true });
 
             const skillName = skill ? skill.name : `空`;
-            const skillCost = skill ? (skill.mp || skill.cost || 10) : 0;
+            const skillCost = skill ? (skill.mp || /** @type {*} */(skill).cost || 10) : 0;
 
             const label = this.add.text(startX + i * 90, y - 8, skillName, {
                 fontSize: '13px', color: skill ? '#ffffff' : '#666666', fontFamily: 'Microsoft JhengHei'
@@ -297,6 +322,9 @@ export default class BattleScene extends Phaser.Scene {
         }
     }
 
+    /**
+     * @param {string} msg
+     */
     log(msg) {
         this.battleLog.text += '▶ ' + msg + '\n';
     }
@@ -416,7 +444,7 @@ export default class BattleScene extends Phaser.Scene {
     attack() {
         if (!this.battleActive || !this.playerTurn) return;
 
-        const attrs = dataManager.data.player.attributes || {};
+        const attrs = /** @type {import('../types.js').FiveAttributes} */ (dataManager.data.player.attributes || {});
         const str = attrs.str !== undefined ? attrs.str : (dataManager.data.player.strength || 10);
         let damage = 10 + Math.floor(str * 0.5);
         if (this.buffs.atk) damage += this.buffs.atk;
@@ -428,7 +456,10 @@ export default class BattleScene extends Phaser.Scene {
         if (!this.battleActive || !this.playerTurn) return;
 
         const skill = this.charSkills[index];
-        if (!skill) return;
+        if (!skill) {
+            this.log('警告：未裝備招式！');
+            return;
+        }
         const skillLevel = this.skillLevels[index] || 0;
         const mpCost = skill.mp || skill.cost || 10;
 
@@ -473,7 +504,7 @@ export default class BattleScene extends Phaser.Scene {
     }
 
     calculateSkillDamage(skill, skillLevel, skillIndex) {
-        const attrs = dataManager.data.player.attributes || {};
+        const attrs = /** @type {import('../types.js').FiveAttributes} */ (dataManager.data.player.attributes || {});
         const str = attrs.str !== undefined ? attrs.str : (dataManager.data.player.strength || 10);
         const wis = attrs.wis !== undefined ? attrs.wis : (dataManager.data.player.innerPower || 10);
         const bra = attrs.bra !== undefined ? attrs.bra : 10;
@@ -586,8 +617,8 @@ export default class BattleScene extends Phaser.Scene {
         this.log('🔥 釋放絕招：' + ultimate.name + '！');
 
         if (ultimate.damageRatio > 0) {
-            const attrs = dataManager.data.player.attributes || {};
-            const str = attrs.str !== undefined ? attrs.str : (dataManager.data.player.strength || 10);
+const attrs = /** @type {import('../types.js').FiveAttributes} */ (dataManager.data.player.attributes || {});
+        const str = attrs.str !== undefined ? attrs.str : (dataManager.data.player.strength || 10);
             const baseAtk = 10 + str * 0.5;
             const weaponAtk = this.getEquipmentStat('attack', 0);
             const damage = Math.floor((baseAtk + weaponAtk) * ultimate.damageRatio);
@@ -877,7 +908,7 @@ export default class BattleScene extends Phaser.Scene {
         }
 
         if (skill && skill.mpSteal) {
-            const stolen = Math.min(skill.mpSteal, this.enemyMp || 0);
+            const stolen = skill.mpSteal;
             this.playerMp = Math.min(this.playerMaxMp, this.playerMp + stolen);
             this.log(`💧 吸取 ${stolen} MP！`);
         }
@@ -945,7 +976,7 @@ export default class BattleScene extends Phaser.Scene {
     }
 
     dealDamageToPlayer(damage) {
-        const attrs = dataManager.data.player.attributes || {};
+        const attrs = /** @type {import('../types.js').FiveAttributes} */ (dataManager.data.player.attributes || {});
         const agi = attrs.bra !== undefined ? attrs.bra : (dataManager.data.player.agility || 10);
         const dodgeChance = agi / (agi + 50);
         if (Math.random() < dodgeChance) {

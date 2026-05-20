@@ -1,50 +1,24 @@
+// @ts-check
+
 import { SKILL_TREE_CONFIG, ITEMS, ACHIEVEMENTS, INITIAL_PLAYER, FIVE_ATTRS, RECIPES, CRAFT_QUALITY } from '../data/GameData.js';
 import { soundManager } from './SoundManager.js';
 
+/** @typedef {import('../types.js').GameState} GameState */
+/** @typedef {import('../types.js').PlayerData} PlayerData */
+/** @typedef {import('../types.js').ItemUseResult} ItemUseResult */
+/** @typedef {import('../types.js').CraftResult} CraftResult */
+/** @typedef {import('../types.js').ActionResult} ActionResult */
+/** @typedef {import('../types.js').FiveAttributes} FiveAttributes */
+/** @typedef {import('../types.js').BattleBuff} BattleBuff */
+/** @typedef {import('../types.js').ItemStat} ItemStat */
+
 class DataManager {
     constructor() {
+        /** @type {Record<string, number>} */
         this.gatheringCooldowns = {};
+        /** @type {GameState} */
         this.data = {
-            player: {
-                name: '',
-                characterId: 'guojing',
-                level: 1,
-                exp: 0,
-                hp: 100,
-                maxHp: 100,
-                mp: 50,
-                maxMp: 50,
-                strength: 10,
-                constitution: 10,
-                agility: 10,
-                innerPower: 10,
-                skillPoints: 3,
-                silver: 1000,
-                skills: [0, 0, 0, 0],
-                skillExp: [0, 0, 0, 0],
-                skillTree: [
-                    { nodes: [false, false, false] },
-                    { nodes: [false, false, false] },
-                    { nodes: [false, false, false] },
-                    { nodes: [false, false, false] }
-                ],
-                inventory: [],
-                equipped: { weapon: null, armor: null, accessory: null },
-                achievements: {},
-                battleCount: 0,
-                killCount: 0,
-                titles: [],
-                combatExp: 0,
-                studyPoints: 0,
-                fame: 0,
-                karma: 0,
-                sect: null,
-                sectReputation: 0,
-                martialArts: [],
-                equippedSkills: [null, null, null, null],
-                attributes: { str: 10, bra: 10, wis: 10, luk: 10, con: 10 },
-                attributePoints: 50
-            },
+            player: DataManager.defaultPlayer(),
             lifeSkills: {
                 herbalism: { level: 1, exp: 0 },
                 mining: { level: 1, exp: 0 },
@@ -62,8 +36,11 @@ class DataManager {
         };
     }
 
-    resetPlayer() {
-        this.data.player = {
+    /**
+     * @returns {PlayerData}
+     */
+    static defaultPlayer() {
+        return {
             name: '',
             characterId: 'guojing',
             level: 1,
@@ -105,6 +82,21 @@ class DataManager {
         };
     }
 
+    /**
+     * @returns {PlayerData}
+     */
+    getPlayer() {
+        return this.data.player;
+    }
+
+    resetPlayer() {
+        this.data.player = DataManager.defaultPlayer();
+    }
+
+    /**
+     * @param {string} charId
+     * @param {{ str: number, con: number, agi: number, ip: number, baseHp: number, baseMp: number }} charData
+     */
     setCharacter(charId, charData) {
         this.data.player.characterId = charId;
         this.data.player.strength = charData.str;
@@ -117,6 +109,10 @@ class DataManager {
         this.data.player.mp = charData.baseMp;
     }
 
+    /**
+     * @param {string} itemId
+     * @param {number} [amount=1]
+     */
     addItem(itemId, amount = 1) {
         const inv = this.data.player.inventory;
         const existing = inv.find(i => i.id === itemId);
@@ -127,6 +123,11 @@ class DataManager {
         }
     }
 
+    /**
+     * @param {string} itemId
+     * @param {number} [amount=1]
+     * @returns {boolean}
+     */
     removeItem(itemId, amount = 1) {
         const inv = this.data.player.inventory;
         const idx = inv.findIndex(i => i.id === itemId);
@@ -138,6 +139,10 @@ class DataManager {
         return false;
     }
 
+    /**
+     * @param {string} itemId
+     * @returns {ItemUseResult}
+     */
     useItem(itemId) {
         const itemDef = ITEMS[itemId];
         if (!itemDef || itemDef.type !== 'consumable') return { ok: false, reason: '無法使用此物品' };
@@ -157,15 +162,26 @@ class DataManager {
         return result;
     }
 
+    /**
+     * @param {string} itemId
+     * @returns {number}
+     */
     getItemCount(itemId) {
         const item = this.data.player.inventory.find(i => i.id === itemId);
         return item ? item.amount : 0;
     }
 
+    /**
+     * @param {number} amount
+     */
     addSilver(amount) {
         this.data.player.silver += amount;
     }
 
+    /**
+     * @param {number} amount
+     * @returns {boolean}
+     */
     removeSilver(amount) {
         if (this.data.player.silver >= amount) {
             this.data.player.silver -= amount;
@@ -214,6 +230,11 @@ class DataManager {
         }
     }
 
+    /**
+     * @param {number} skillIndex
+     * @param {number} nodeIndex
+     * @returns {boolean}
+     */
     upgradeSkillNode(skillIndex, nodeIndex) {
         const p = this.data.player;
         const tree = p.skillTree;
@@ -229,6 +250,11 @@ class DataManager {
         return true;
     }
 
+    /**
+     * @param {number} skillIndex
+     * @param {number} nodeIndex
+     * @returns {boolean}
+     */
     canUpgradeNode(skillIndex, nodeIndex) {
         const p = this.data.player;
         const tree = p.skillTree;
@@ -238,6 +264,9 @@ class DataManager {
         return p.skillPoints >= SKILL_TREE_CONFIG.nodeCosts[nodeIndex];
     }
 
+    /**
+     * @returns {ItemStat}
+     */
     getBattleStats() {
         const equipped = this.data.player.equipped;
         const stats = { attack: 0, defense: 0, critBonus: 0, dmgReduction: 0, hpRegenCombat: 0, rageBoost: 1.0 };
@@ -258,6 +287,10 @@ class DataManager {
         return stats;
     }
 
+    /**
+     * @param {string} itemId
+     * @returns {boolean}
+     */
     equipItem(itemId) {
         const item = ITEMS[itemId];
         if (!item) return false;
@@ -270,14 +303,23 @@ class DataManager {
         return true;
     }
 
+    /**
+     * @param {'weapon'|'armor'|'accessory'} slot
+     */
     unequipItem(slot) {
         this.data.player.equipped[slot] = null;
     }
 
+    /**
+     * @returns {number}
+     */
     getLevelExpRequirement() {
         return this.data.player.level * 200;
     }
 
+    /**
+     * @param {number} amount
+     */
     addCombatExp(amount) {
         this.data.player.combatExp += amount;
         const required = this.getLevelExpRequirement();
@@ -291,14 +333,23 @@ class DataManager {
         }
     }
 
+    /**
+     * @param {number} amount
+     */
     addStudyPoints(amount) {
         this.data.player.studyPoints += Math.floor(amount);
     }
 
+    /**
+     * @param {number} amount
+     */
     addFame(amount) {
         this.data.player.fame = Math.max(0, this.data.player.fame + amount);
     }
 
+    /**
+     * @param {number} amount
+     */
     addKarma(amount) {
         this.data.player.karma = Math.max(-1000, Math.min(1000, this.data.player.karma + amount));
     }
@@ -312,6 +363,10 @@ class DataManager {
         return '魔頭';
     }
 
+    /**
+     * @param {string} skillId
+     * @param {number} amount
+     */
     addLifeSkillExp(skillId, amount) {
         const skill = this.data.lifeSkills[skillId];
         if (!skill) return;
@@ -329,10 +384,18 @@ class DataManager {
         return now >= cd;
     }
 
+    /**
+     * @param {string} spotId
+     * @param {number} ms
+     */
     setGatherCooldown(spotId, ms) {
         this.gatheringCooldowns[spotId] = Date.now() + ms;
     }
 
+    /**
+     * @param {string} recipeKey
+     * @returns {CraftResult}
+     */
     craftItem(recipeKey) {
         const recipe = RECIPES[recipeKey];
         if (!recipe) return { ok: false, reason: '配方不存在' };
@@ -365,10 +428,16 @@ class DataManager {
         return { ok: true, item: recipe.result, quality, statMul, recipeName: recipe.name };
     }
 
+    /**
+     * @returns {GameState}
+     */
     getData() {
         return this.data;
     }
 
+    /**
+     * @param {GameState} data
+     */
     setData(data) {
         this.data = data;
     }

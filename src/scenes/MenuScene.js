@@ -1,3 +1,4 @@
+// @ts-check
 import Phaser from 'phaser';
 import { saveSystem } from '../systems/SaveSystem.js';
 import { dataManager } from '../systems/DataManager.js';
@@ -91,7 +92,7 @@ export default class MenuScene extends Phaser.Scene {
 
         const continueBtn = this.createMenuButton(640 + spacing, buttonY, '繼續遊戲', () => {
             if (saveSystem.load()) {
-                const charId = dataManager.data.player.characterId;
+                const charId = dataManager.getPlayer().characterId;
                 if (CHARACTERS[charId]) {
                     dataManager.setCharacter(charId, CHARACTERS[charId]);
                 }
